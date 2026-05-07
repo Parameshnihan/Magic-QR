@@ -3,20 +3,44 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: ReviewFlow Pro API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: users
+    description: User management
+  - name: clients
+    description: Client management
+  - name: qr-campaigns
+    description: QR campaign management
+  - name: reviews
+    description: Review management
+  - name: feedback
+    description: Negative feedback management
+  - name: billing
+    description: Billing and subscriptions
+  - name: notifications
+    description: Notification management
+  - name: analytics
+    description: Analytics and reporting
+  - name: audit-logs
+    description: Audit log operations
+  - name: settings
+    description: System settings
+  - name: public
+    description: Public review flow endpoints
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +48,1222 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── Auth ───
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current session
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/forgot-password:
+    post:
+      operationId: forgotPassword
+      tags: [auth]
+      summary: Send password reset email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordBody"
+      responses:
+        "200":
+          description: Reset email sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/reset-password:
+    post:
+      operationId: resetPassword
+      tags: [auth]
+      summary: Reset password with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordBody"
+      responses:
+        "200":
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  # ─── Users ───
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedUsers"
+
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a new user (admin/manager)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserBody"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get a user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /users/{id}/toggle-status:
+    patch:
+      operationId: toggleUserStatus
+      tags: [users]
+      summary: Enable or disable a user account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ToggleStatusBody"
+      responses:
+        "200":
+          description: Status toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # ─── Clients ───
+  /clients:
+    get:
+      operationId: listClients
+      tags: [clients]
+      summary: List all clients
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: managerId
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of clients
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedClients"
+
+    post:
+      operationId: createClient
+      tags: [clients]
+      summary: Create a new client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateClientBody"
+      responses:
+        "201":
+          description: Client created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+
+  /clients/{id}:
+    get:
+      operationId: getClient
+      tags: [clients]
+      summary: Get client by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Client found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateClient
+      tags: [clients]
+      summary: Update a client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateClientBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+
+    delete:
+      operationId: deleteClient
+      tags: [clients]
+      summary: Delete a client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /clients/{id}/toggle-status:
+    patch:
+      operationId: toggleClientStatus
+      tags: [clients]
+      summary: Activate or deactivate a client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ToggleStatusBody"
+      responses:
+        "200":
+          description: Status toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+
+  /clients/{id}/stats:
+    get:
+      operationId: getClientStats
+      tags: [clients]
+      summary: Get stats for a specific client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Client stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientStats"
+
+  /clients/expiring:
+    get:
+      operationId: listExpiringClients
+      tags: [clients]
+      summary: List clients with subscriptions expiring soon
+      parameters:
+        - name: days
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Expiring clients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Client"
+
+  # ─── QR Campaigns ───
+  /qr-campaigns:
+    get:
+      operationId: listQrCampaigns
+      tags: [qr-campaigns]
+      summary: List all QR campaigns
+      parameters:
+        - name: clientId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of QR campaigns
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedQrCampaigns"
+
+    post:
+      operationId: createQrCampaign
+      tags: [qr-campaigns]
+      summary: Create a new QR campaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateQrCampaignBody"
+      responses:
+        "201":
+          description: Campaign created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QrCampaign"
+
+  /qr-campaigns/{id}:
+    get:
+      operationId: getQrCampaign
+      tags: [qr-campaigns]
+      summary: Get QR campaign by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: QR campaign found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QrCampaign"
+
+    patch:
+      operationId: updateQrCampaign
+      tags: [qr-campaigns]
+      summary: Update a QR campaign
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateQrCampaignBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QrCampaign"
+
+    delete:
+      operationId: deleteQrCampaign
+      tags: [qr-campaigns]
+      summary: Delete a QR campaign
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /qr-campaigns/{id}/stats:
+    get:
+      operationId: getQrCampaignStats
+      tags: [qr-campaigns]
+      summary: Get analytics for a QR campaign
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Campaign stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QrCampaignStats"
+
+  # ─── Reviews ───
+  /reviews:
+    get:
+      operationId: listReviews
+      tags: [reviews]
+      summary: List all reviews (positive redirects)
+      parameters:
+        - name: clientId
+          in: query
+          schema:
+            type: integer
+        - name: campaignId
+          in: query
+          schema:
+            type: integer
+        - name: rating
+          in: query
+          schema:
+            type: integer
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of reviews
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedReviews"
+
+  /reviews/{id}:
+    get:
+      operationId: getReview
+      tags: [reviews]
+      summary: Get a review by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Review found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+
+  # ─── Feedback (Negative) ───
+  /feedback:
+    get:
+      operationId: listFeedback
+      tags: [feedback]
+      summary: List all negative feedback
+      parameters:
+        - name: clientId
+          in: query
+          schema:
+            type: integer
+        - name: priority
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of feedback
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedFeedback"
+
+  /feedback/{id}:
+    get:
+      operationId: getFeedback
+      tags: [feedback]
+      summary: Get feedback by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Feedback found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Feedback"
+
+    patch:
+      operationId: updateFeedback
+      tags: [feedback]
+      summary: Update feedback status/priority
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFeedbackBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Feedback"
+
+  # ─── Billing / Subscriptions ───
+  /subscriptions:
+    get:
+      operationId: listSubscriptions
+      tags: [billing]
+      summary: List all subscriptions
+      parameters:
+        - name: clientId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of subscriptions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedSubscriptions"
+
+    post:
+      operationId: createSubscription
+      tags: [billing]
+      summary: Create a subscription for a client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSubscriptionBody"
+      responses:
+        "201":
+          description: Subscription created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
+  /subscriptions/{id}:
+    get:
+      operationId: getSubscription
+      tags: [billing]
+      summary: Get subscription by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Subscription found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
+    patch:
+      operationId: updateSubscription
+      tags: [billing]
+      summary: Update a subscription
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSubscriptionBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
+  /invoices:
+    get:
+      operationId: listInvoices
+      tags: [billing]
+      summary: List all invoices
+      parameters:
+        - name: clientId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedInvoices"
+
+    post:
+      operationId: createInvoice
+      tags: [billing]
+      summary: Generate an invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInvoiceBody"
+      responses:
+        "201":
+          description: Invoice created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  /invoices/{id}:
+    get:
+      operationId: getInvoice
+      tags: [billing]
+      summary: Get invoice by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Invoice found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+    patch:
+      operationId: updateInvoice
+      tags: [billing]
+      summary: Update invoice status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInvoiceBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  # ─── Notifications ───
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List notifications for current user
+      parameters:
+        - name: read
+          in: query
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedNotifications"
+
+  /notifications/{id}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a notification as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Marked as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  /notifications/read-all:
+    patch:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: All marked as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  # ─── Analytics ───
+  /analytics/dashboard:
+    get:
+      operationId: getDashboardStats
+      tags: [analytics]
+      summary: Get dashboard KPI stats
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [today, week, month, custom]
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /analytics/reviews-over-time:
+    get:
+      operationId: getReviewsOverTime
+      tags: [analytics]
+      summary: Get reviews chart data over time
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+        - name: clientId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reviews over time
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TimeSeriesPoint"
+
+  /analytics/scans-over-time:
+    get:
+      operationId: getScansOverTime
+      tags: [analytics]
+      summary: Get QR scans chart data over time
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+        - name: clientId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Scans over time
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TimeSeriesPoint"
+
+  /analytics/top-clients:
+    get:
+      operationId: getTopClients
+      tags: [analytics]
+      summary: Get top performing clients
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Top clients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopClient"
+
+  /analytics/rating-distribution:
+    get:
+      operationId: getRatingDistribution
+      tags: [analytics]
+      summary: Get rating distribution breakdown
+      parameters:
+        - name: clientId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Rating distribution
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RatingDistributionItem"
+
+  /analytics/revenue-over-time:
+    get:
+      operationId: getRevenueOverTime
+      tags: [analytics]
+      summary: Get monthly revenue chart data
+      parameters:
+        - name: months
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Revenue over time
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RevenuePoint"
+
+  # ─── Audit Logs ───
+  /audit-logs:
+    get:
+      operationId: listAuditLogs
+      tags: [audit-logs]
+      summary: List audit logs
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: integer
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: entity
+          in: query
+          schema:
+            type: string
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Audit logs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedAuditLogs"
+
+  # ─── Settings ───
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get system settings
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+
+    patch:
+      operationId: updateSettings
+      tags: [settings]
+      summary: Update system settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSettingsBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+
+  # ─── Public Review Flow ───
+  /public/review/{qrCode}:
+    get:
+      operationId: getPublicReviewPage
+      tags: [public]
+      summary: Get review page data for a QR code
+      parameters:
+        - name: qrCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Review page data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicReviewPageData"
+        "404":
+          description: QR code not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /public/review/{qrCode}/submit:
+    post:
+      operationId: submitPublicReview
+      tags: [public]
+      summary: Submit a review or feedback from the public flow
+      parameters:
+        - name: qrCode
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitReviewBody"
+      responses:
+        "200":
+          description: Submission result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubmitReviewResponse"
+
+  /public/review/{qrCode}/scan:
+    post:
+      operationId: recordQrScan
+      tags: [public]
+      summary: Record a QR code scan event
+      parameters:
+        - name: qrCode
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordScanBody"
+      responses:
+        "200":
+          description: Scan recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +1271,959 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required: [success]
+
+    # ─── Auth ───
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required: [email, password]
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+      required: [user, token]
+
+    ForgotPasswordBody:
+      type: object
+      properties:
+        email:
+          type: string
+      required: [email]
+
+    ResetPasswordBody:
+      type: object
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+      required: [token, password]
+
+    ToggleStatusBody:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    # ─── User ───
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [super_admin, admin, manager, client]
+        status:
+          type: string
+          enum: [active, inactive]
+        avatar:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, name, email, role, status, createdAt, updatedAt]
+
+    CreateUserBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+          enum: [admin, manager, client]
+        phone:
+          type: ["string", "null"]
+      required: [name, email, password, role]
+
+    UpdateUserBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        phone:
+          type: ["string", "null"]
+        status:
+          type: string
+
+    PaginatedUsers:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required: [data, total, page, limit]
+
+    # ─── Client ───
+    Client:
+      type: object
+      properties:
+        id:
+          type: integer
+        clientId:
+          type: string
+        name:
+          type: string
+        businessName:
+          type: string
+        googleBusinessName:
+          type: ["string", "null"]
+        businessCategory:
+          type: string
+        phone:
+          type: string
+        whatsappNumber:
+          type: ["string", "null"]
+        email:
+          type: string
+        address:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        googleReviewLink:
+          type: ["string", "null"]
+        recommendedKeywords:
+          type: array
+          items:
+            type: string
+        subscriptionPlan:
+          type: string
+          enum: [basic, professional, enterprise]
+        renewalDate:
+          type: ["string", "null"]
+        assignedManagerId:
+          type: ["integer", "null"]
+        assignedManagerName:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [active, inactive, expired]
+        paymentStatus:
+          type: string
+          enum: [paid, pending, overdue]
+        notes:
+          type: ["string", "null"]
+        customDomain:
+          type: ["string", "null"]
+        totalScans:
+          type: integer
+        totalReviews:
+          type: integer
+        positiveReviews:
+          type: integer
+        negativeReviews:
+          type: integer
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, clientId, name, businessName, businessCategory, phone, email, subscriptionPlan, status, paymentStatus, totalScans, totalReviews, positiveReviews, negativeReviews, recommendedKeywords, createdAt, updatedAt]
+
+    CreateClientBody:
+      type: object
+      properties:
+        name:
+          type: string
+        businessName:
+          type: string
+        googleBusinessName:
+          type: ["string", "null"]
+        businessCategory:
+          type: string
+        phone:
+          type: string
+        whatsappNumber:
+          type: ["string", "null"]
+        email:
+          type: string
+        address:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        googleReviewLink:
+          type: ["string", "null"]
+        recommendedKeywords:
+          type: array
+          items:
+            type: string
+        subscriptionPlan:
+          type: string
+          enum: [basic, professional, enterprise]
+        renewalDate:
+          type: ["string", "null"]
+        assignedManagerId:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+        customDomain:
+          type: ["string", "null"]
+      required: [name, businessName, businessCategory, phone, email, subscriptionPlan]
+
+    UpdateClientBody:
+      type: object
+      properties:
+        name:
+          type: string
+        businessName:
+          type: string
+        googleBusinessName:
+          type: ["string", "null"]
+        businessCategory:
+          type: string
+        phone:
+          type: string
+        whatsappNumber:
+          type: ["string", "null"]
+        email:
+          type: string
+        address:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        googleReviewLink:
+          type: ["string", "null"]
+        recommendedKeywords:
+          type: array
+          items:
+            type: string
+        subscriptionPlan:
+          type: string
+        renewalDate:
+          type: ["string", "null"]
+        assignedManagerId:
+          type: ["integer", "null"]
+        status:
+          type: string
+        paymentStatus:
+          type: string
+        notes:
+          type: ["string", "null"]
+        customDomain:
+          type: ["string", "null"]
+
+    PaginatedClients:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Client"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required: [data, total, page, limit]
+
+    ClientStats:
+      type: object
+      properties:
+        totalScans:
+          type: integer
+        totalReviews:
+          type: integer
+        positiveReviews:
+          type: integer
+        negativeReviews:
+          type: integer
+        conversionRate:
+          type: number
+        avgRating:
+          type: number
+        scansThisMonth:
+          type: integer
+        reviewsThisMonth:
+          type: integer
+      required: [totalScans, totalReviews, positiveReviews, negativeReviews, conversionRate, avgRating, scansThisMonth, reviewsThisMonth]
+
+    # ─── QR Campaign ───
+    QrCampaign:
+      type: object
+      properties:
+        id:
+          type: integer
+        qrCode:
+          type: string
+        name:
+          type: string
+        clientId:
+          type: integer
+        clientName:
+          type: string
+        destinationUrl:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, expired]
+        totalScans:
+          type: integer
+        totalReviews:
+          type: integer
+        conversionRate:
+          type: number
+        qrImageUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, qrCode, name, clientId, clientName, destinationUrl, status, totalScans, totalReviews, conversionRate, createdAt, updatedAt]
+
+    CreateQrCampaignBody:
+      type: object
+      properties:
+        name:
+          type: string
+        clientId:
+          type: integer
+        destinationUrl:
+          type: string
+      required: [name, clientId, destinationUrl]
+
+    UpdateQrCampaignBody:
+      type: object
+      properties:
+        name:
+          type: string
+        destinationUrl:
+          type: string
+        status:
+          type: string
+
+    PaginatedQrCampaigns:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/QrCampaign"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required: [data, total, page, limit]
+
+    QrCampaignStats:
+      type: object
+      properties:
+        totalScans:
+          type: integer
+        totalReviews:
+          type: integer
+        positiveReviews:
+          type: integer
+        negativeReviews:
+          type: integer
+        conversionRate:
+          type: number
+        deviceBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeviceBreakdownItem"
+        scansByDay:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimeSeriesPoint"
+      required: [totalScans, totalReviews, positiveReviews, negativeReviews, conversionRate, deviceBreakdown, scansByDay]
+
+    DeviceBreakdownItem:
+      type: object
+      properties:
+        device:
+          type: string
+        count:
+          type: integer
+        percentage:
+          type: number
+      required: [device, count, percentage]
+
+    # ─── Review ───
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+        campaignId:
+          type: integer
+        clientId:
+          type: integer
+        clientName:
+          type: string
+        rating:
+          type: integer
+        reviewText:
+          type: ["string", "null"]
+        keywords:
+          type: array
+          items:
+            type: string
+        redirectedToGoogle:
+          type: boolean
+        deviceType:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, campaignId, clientId, clientName, rating, redirectedToGoogle, keywords, createdAt]
+
+    PaginatedReviews:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Review"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required: [data, total, page, limit]
+
+    # ─── Feedback ───
+    Feedback:
+      type: object
+      properties:
+        id:
+          type: integer
+        campaignId:
+          type: integer
+        clientId:
+          type: integer
+        clientName:
+          type: string
+        rating:
+          type: integer
+        feedbackText:
+          type: ["string", "null"]
+        complaintCategory:
+          type: ["string", "null"]
+        customerName:
+          type: ["string", "null"]
+        customerPhone:
+          type: ["string", "null"]
+        customerEmail:
+          type: ["string", "null"]
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        status:
+          type: string
+          enum: [new, in_progress, resolved, closed]
+        deviceType:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, campaignId, clientId, clientName, rating, priority, status, createdAt]
+
+    UpdateFeedbackBody:
+      type: object
+      properties:
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        status:
+          type: string
+          enum: [new, in_progress, resolved, closed]
+
+    PaginatedFeedback:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Feedback"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required: [data, total, page, limit]
+
+    # ─── Subscription ───
+    Subscription:
+      type: object
+      properties:
+        id:
+          type: integer
+        clientId:
+          type: integer
+        clientName:
+          type: string
+        plan:
+          type: string
+          enum: [basic, professional, enterprise]
+        amount:
+          type: number
+        status:
+          type: string
+          enum: [active, expired, cancelled, pending]
+        startDate:
+          type: string
+        endDate:
+          type: string
+        autoRenew:
+          type: boolean
+        createdAt:
+          type: string
+      required: [id, clientId, clientName, plan, amount, status, startDate, endDate, autoRenew, createdAt]
+
+    CreateSubscriptionBody:
+      type: object
+      properties:
+        clientId:
+          type: integer
+        plan:
+          type: string
+          enum: [basic, professional, enterprise]
+        amount:
+          type: number
+        startDate:
+          type: string
+        endDate:
+          type: string
+        autoRenew:
+          type: boolean
+      required: [clientId, plan, amount, startDate, endDate]
+
+    UpdateSubscriptionBody:
+      type: object
+      properties:
+        plan:
+          type: string
+        amount:
+          type: number
+        status:
+          type: string
+        endDate:
+          type: string
+        autoRenew:
+          type: boolean
+
+    PaginatedSubscriptions:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Subscription"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required: [data, total, page, limit]
+
+    # ─── Invoice ───
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: integer
+        invoiceNumber:
+          type: string
+        clientId:
+          type: integer
+        clientName:
+          type: string
+        subscriptionId:
+          type: ["integer", "null"]
+        amount:
+          type: number
+        status:
+          type: string
+          enum: [paid, pending, overdue, cancelled]
+        dueDate:
+          type: string
+        paidDate:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, invoiceNumber, clientId, clientName, amount, status, dueDate, createdAt]
+
+    CreateInvoiceBody:
+      type: object
+      properties:
+        clientId:
+          type: integer
+        subscriptionId:
+          type: ["integer", "null"]
+        amount:
+          type: number
+        dueDate:
+          type: string
+        notes:
+          type: ["string", "null"]
+      required: [clientId, amount, dueDate]
+
+    UpdateInvoiceBody:
+      type: object
+      properties:
+        status:
+          type: string
+        paidDate:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    PaginatedInvoices:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Invoice"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required: [data, total, page, limit]
+
+    # ─── Notification ───
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        title:
+          type: string
+        message:
+          type: string
+        type:
+          type: string
+          enum: [review, feedback, billing, system, alert]
+        read:
+          type: boolean
+        entityId:
+          type: ["integer", "null"]
+        entityType:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, userId, title, message, type, read, createdAt]
+
+    PaginatedNotifications:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        total:
+          type: integer
+        unreadCount:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required: [data, total, unreadCount, page, limit]
+
+    # ─── Analytics ───
+    DashboardStats:
+      type: object
+      properties:
+        totalQrScans:
+          type: integer
+        totalReviews:
+          type: integer
+        totalGoogleRedirects:
+          type: integer
+        positiveReviews:
+          type: integer
+        negativeReviews:
+          type: integer
+        conversionRate:
+          type: number
+        activeClients:
+          type: integer
+        inactiveClients:
+          type: integer
+        monthlyRevenue:
+          type: number
+        expiringSubscriptions:
+          type: integer
+        pendingInvoices:
+          type: integer
+        scansGrowth:
+          type: number
+        reviewsGrowth:
+          type: number
+        revenueGrowth:
+          type: number
+      required: [totalQrScans, totalReviews, totalGoogleRedirects, positiveReviews, negativeReviews, conversionRate, activeClients, inactiveClients, monthlyRevenue, expiringSubscriptions, pendingInvoices, scansGrowth, reviewsGrowth, revenueGrowth]
+
+    TimeSeriesPoint:
+      type: object
+      properties:
+        date:
+          type: string
+        value:
+          type: integer
+        label:
+          type: ["string", "null"]
+      required: [date, value]
+
+    TopClient:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        businessName:
+          type: string
+        totalScans:
+          type: integer
+        totalReviews:
+          type: integer
+        conversionRate:
+          type: number
+        positiveRate:
+          type: number
+      required: [id, name, businessName, totalScans, totalReviews, conversionRate, positiveRate]
+
+    RatingDistributionItem:
+      type: object
+      properties:
+        rating:
+          type: integer
+        count:
+          type: integer
+        percentage:
+          type: number
+      required: [rating, count, percentage]
+
+    RevenuePoint:
+      type: object
+      properties:
+        month:
+          type: string
+        revenue:
+          type: number
+        invoicesCount:
+          type: integer
+      required: [month, revenue, invoicesCount]
+
+    # ─── Audit Log ───
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: ["integer", "null"]
+        userName:
+          type: ["string", "null"]
+        action:
+          type: string
+        entity:
+          type: string
+        entityId:
+          type: ["integer", "null"]
+        details:
+          type: ["string", "null"]
+        ipAddress:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, action, entity, createdAt]
+
+    PaginatedAuditLogs:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditLog"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required: [data, total, page, limit]
+
+    # ─── Settings ───
+    Settings:
+      type: object
+      properties:
+        id:
+          type: integer
+        platformName:
+          type: string
+        platformLogo:
+          type: ["string", "null"]
+        primaryColor:
+          type: string
+        smtpHost:
+          type: ["string", "null"]
+        smtpPort:
+          type: ["integer", "null"]
+        smtpUser:
+          type: ["string", "null"]
+        whatsappApiKey:
+          type: ["string", "null"]
+        stripePublicKey:
+          type: ["string", "null"]
+        razorpayKeyId:
+          type: ["string", "null"]
+        googleApiEnabled:
+          type: boolean
+        updatedAt:
+          type: string
+      required: [id, platformName, primaryColor, googleApiEnabled, updatedAt]
+
+    UpdateSettingsBody:
+      type: object
+      properties:
+        platformName:
+          type: string
+        platformLogo:
+          type: ["string", "null"]
+        primaryColor:
+          type: string
+        smtpHost:
+          type: ["string", "null"]
+        smtpPort:
+          type: ["integer", "null"]
+        smtpUser:
+          type: ["string", "null"]
+        whatsappApiKey:
+          type: ["string", "null"]
+        stripePublicKey:
+          type: ["string", "null"]
+        razorpayKeyId:
+          type: ["string", "null"]
+        googleApiEnabled:
+          type: boolean
+
+    # ─── Public Review Flow ───
+    PublicReviewPageData:
+      type: object
+      properties:
+        campaignId:
+          type: integer
+        clientId:
+          type: integer
+        businessName:
+          type: string
+        logoUrl:
+          type: ["string", "null"]
+        recommendedKeywords:
+          type: array
+          items:
+            type: string
+        businessCategory:
+          type: string
+        isActive:
+          type: boolean
+      required: [campaignId, clientId, businessName, recommendedKeywords, businessCategory, isActive]
+
+    SubmitReviewBody:
+      type: object
+      properties:
+        rating:
+          type: integer
+        reviewText:
+          type: ["string", "null"]
+        keywords:
+          type: array
+          items:
+            type: string
+        feedbackText:
+          type: ["string", "null"]
+        complaintCategory:
+          type: ["string", "null"]
+        customerName:
+          type: ["string", "null"]
+        customerPhone:
+          type: ["string", "null"]
+        customerEmail:
+          type: ["string", "null"]
+        deviceType:
+          type: ["string", "null"]
+      required: [rating]
+
+    SubmitReviewResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [positive, negative]
+        googleReviewUrl:
+          type: ["string", "null"]
+        reviewText:
+          type: ["string", "null"]
+        message:
+          type: string
+      required: [type, message]
+
+    RecordScanBody:
+      type: object
+      properties:
+        deviceType:
+          type: ["string", "null"]
+        userAgent:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]

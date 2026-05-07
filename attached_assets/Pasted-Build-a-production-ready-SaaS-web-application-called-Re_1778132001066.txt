@@ -1,0 +1,670 @@
+Build a production-ready SaaS web application called “ReviewFlow Pro” — a premium reputation management and Google review automation platform for agencies, hotels, restaurants, healthcare brands, and multi-location businesses.
+
+The platform helps agencies onboard clients, generate QR codes, collect customer ratings, redirect positive reviews to Google Business Profile, capture negative feedback privately, automate notifications, manage billing/subscriptions, and provide analytics dashboards for admins, managers, and clients.
+
+====================================================
+BRAND DESIGN SYSTEM & UI STYLE
+====================================================
+
+Use this premium luxury hospitality-inspired color palette throughout the entire application:
+
+PRIMARY BRAND COLORS:
+- Deep Black: #120700
+- Warm Brown: #8B4A1F
+- Soft Beige Background: #F3EFEC
+- Light Grid Line: #E5DFDA
+- Muted Gray Text: #7A6F68
+
+DESIGN STYLE:
+- Premium modern SaaS
+- Luxury hospitality-tech aesthetic
+- Minimal clean layout
+- Editorial typography style
+- High whitespace usage
+- Elegant analytics dashboards
+- Smooth micro animations
+- Glassmorphism cards
+- Tailwind SaaS styling
+- Soft shadows
+- Rounded-xl components
+- Premium enterprise feel
+
+TYPOGRAPHY:
+- Large bold headings
+- Clean sans-serif typography
+- Spacious layouts
+- Elegant spacing
+- Strong visual hierarchy
+
+LANDING PAGE STYLE:
+Inspired by premium hospitality SaaS products with:
+- Large editorial headings
+- Soft grid background
+- Minimal elegant sections
+- High-end CRM dashboard feel
+- Premium conversion-focused layouts
+
+Example heading style:
+“Boost Direct Bookings.”
+“Reduce OTA Commissions.”
+
+COLOR USAGE:
+- Background: #F3EFEC
+- Sidebar: #120700
+- Primary Buttons: #8B4A1F
+- Headings: #120700
+- Secondary Text: #7A6F68
+- Borders/Dividers: #E5DFDA
+
+BUTTON DESIGN:
+Primary Button:
+- Background: #8B4A1F
+- White text
+- Rounded-xl
+- Smooth hover transition
+
+Secondary Button:
+- Transparent background
+- Border: #120700
+- Text: #120700
+
+DO NOT USE:
+- Neon colors
+- Bright gradients
+- Playful UI
+- Dark mode
+- Heavy visual clutter
+
+====================================================
+TECH STACK
+====================================================
+
+Frontend:
+- React.js
+- Vite
+- Tailwind CSS
+- ShadCN UI
+- Framer Motion
+- React Router
+- React Query
+- Recharts
+
+Backend:
+- Supabase
+- PostgreSQL
+- Supabase Auth
+- Supabase Storage
+- Edge Functions
+
+Hosting:
+- Frontend: Vercel
+- Backend/Auth/Database: Supabase
+
+Integrations:
+- Google Business Profile
+- Razorpay
+- Stripe
+- WhatsApp API
+- SMTP Email Service
+- QR Generator
+- PDF Invoice Generator
+
+====================================================
+USER ROLES
+====================================================
+
+1. Super Admin
+- Full system access
+- Manage admins
+- Manage managers
+- Manage clients
+- Access billing
+- Analytics
+- System settings
+- QR management
+- Export reports
+- Audit logs
+- API settings
+
+2. Admin
+- Manage clients
+- View analytics
+- Manage QR campaigns
+- View billing
+- Access reports
+- Receive notifications
+- No super admin settings access
+
+3. Manager
+Permissions:
+- View all clients
+- Add new clients
+- View analytics
+- View reports
+- Cannot edit clients
+- Cannot delete clients
+- Cannot access billing
+- Cannot manage admins
+
+4. Client Login
+Clients can:
+- View dashboard
+- Download QR codes
+- View analytics
+- See scans
+- View positive/negative reviews
+- View conversion rates
+- Export reports
+- Update limited profile settings
+- View billing status
+- View subscription expiry
+
+====================================================
+AUTHENTICATION
+====================================================
+
+Implement:
+- Email/password login
+- Google login
+- 2FA authentication
+- Forgot password
+- Session management
+- Role-based route protection
+
+====================================================
+MAIN LAYOUT
+====================================================
+
+Create a premium dashboard layout with:
+- Sticky left sidebar
+- Elegant top navigation
+- Global search
+- Notifications dropdown
+- Profile dropdown
+- Responsive sidebar drawer
+
+Sidebar Navigation:
+- Dashboard
+- Clients
+- QR Campaigns
+- Analytics
+- Reviews
+- Billing
+- Reports
+- Settings
+- Notifications
+- Logout
+
+Logout should open confirmation modal:
+- Cancel
+- Yes Logout
+
+====================================================
+DASHBOARD MODULE
+====================================================
+
+Create an advanced analytics dashboard.
+
+Display KPI Cards:
+- Total QR scans
+- Total reviews collected
+- Total Google reviews redirected
+- Total positive reviews
+- Total negative reviews
+- Review conversion rate
+- Active clients
+- Inactive clients
+- Monthly revenue
+- Expiring subscriptions
+- Pending invoices
+
+Charts:
+- Weekly scan analytics
+- Monthly review analytics
+- Positive vs negative reviews
+- Top-performing clients
+- Device analytics
+- Location analytics
+- Scan source analytics
+
+Tables:
+- Recent scans
+- Recent reviews
+- Recent feedback
+- Expiring clients
+
+Filters:
+- Today
+- Weekly
+- Monthly
+- Custom date range
+
+====================================================
+CLIENTS MODULE
+====================================================
+
+Create a complete client management system.
+
+Add New Client Form Fields:
+- Client ID auto-generated
+- Client Name
+- Business Name
+- Google Business Name
+- Business Category
+- Phone Number
+- WhatsApp Number
+- Business Email
+- Address
+- Logo Upload
+- Google Review Link
+- Recommended Keywords
+- Subscription Plan
+- Renewal Date
+- Assigned Manager
+- QR Campaign Name
+- Notes
+- Status Active/Inactive
+- Payment Status
+- Custom Domain optional
+
+Actions:
+- Save Client
+- Generate QR
+- Send Welcome Email
+- Send WhatsApp
+
+====================================================
+QR CODE SYSTEM
+====================================================
+
+Generate dynamic editable QR codes.
+
+Features:
+- Static URL mapping
+- Editable destination
+- Trackable analytics
+- Unique QR ID
+- PNG download
+- SVG download
+- PDF download
+- Bulk QR generation
+- QR preview
+- Custom branding
+- QR analytics tracking
+
+====================================================
+CUSTOMER REVIEW FLOW
+====================================================
+
+When customer scans QR:
+- Open responsive landing page
+- Show client logo
+- Show business name
+- Show rating selector
+- Use premium Google-inspired UI
+- Mobile optimized
+- Elegant thank you animations
+
+====================================================
+RATING FLOW LOGIC
+====================================================
+
+If rating = 1,2,3:
+- Show feedback form
+- Optional complaint details
+- Optional contact field
+
+After submission:
+- Store feedback privately
+- Send notification to:
+  - Client WhatsApp
+  - Client email
+  - Admin
+  - Manager
+
+Then show:
+- Thank you animation
+- “We appreciate your feedback”
+
+Do NOT redirect to Google.
+
+If rating = 4 or 5:
+- Show recommended keyword chips
+- Show AI-generated review suggestions
+- Optional custom review textarea
+
+Then:
+- Submit review data
+- Redirect to Google review page
+- Auto-copy review text
+- Open Google review URL
+
+Important:
+Implement the strongest possible Google review flow allowed within Google policies.
+
+If direct API posting is not allowed by Google, implement the closest seamless UX possible:
+- pre-filled review text
+- auto copy
+- one-click redirect
+
+====================================================
+GOOGLE BUSINESS PROFILE INTEGRATION
+====================================================
+
+Features:
+- Connect Google Business accounts
+- Sync review analytics
+- Track review redirects
+- Fetch rating statistics
+- Multi-location support
+
+====================================================
+AUTOMATION SYSTEM
+====================================================
+
+Notifications:
+- WhatsApp alerts
+- Email alerts
+- SMS integration
+
+Positive Review Automation:
+- Thank-you reply templates
+- Google review response suggestions
+- AI-generated responses
+
+Negative Feedback Automation:
+- Escalation alerts
+- Priority tagging
+- Internal notifications
+
+====================================================
+BILLING MODULE
+====================================================
+
+Create full subscription management.
+
+Features:
+- Monthly subscriptions
+- Manual payment tracking
+- Payment status control
+- Auto-disable expired clients
+- Renewal reminders
+- Invoice generation PDF
+- Razorpay integration
+- Stripe integration
+- Billing history
+- Payment logs
+
+Billing actions:
+- Activate client
+- Deactivate client
+- Extend plan
+- Generate invoice
+- Send reminder email
+
+====================================================
+PAYMENT REMINDER EMAILS
+====================================================
+
+Create professional automated email templates with:
+- Client name
+- Due amount
+- Due date
+- Renewal link
+- Payment button
+- Branding
+
+====================================================
+REPORTS MODULE
+====================================================
+
+Allow exports:
+- PDF
+- Excel
+- CSV
+
+Reports:
+- Client performance
+- Review analytics
+- QR analytics
+- Revenue reports
+- Subscription reports
+
+====================================================
+SETTINGS MODULE
+====================================================
+
+User Management:
+- Add Admin
+- Add Manager
+- Role permissions
+- Disable accounts
+
+Account Settings:
+- Change password
+- Enable 2FA
+- Profile settings
+
+Branding:
+- White-label support
+- Upload logo
+- Brand colors
+- Email branding
+
+API Settings:
+- WhatsApp API
+- SMTP settings
+- Google integrations
+- Stripe
+- Razorpay
+
+====================================================
+ANALYTICS MODULE
+====================================================
+
+Advanced analytics including:
+- Scan conversion rate
+- Positive vs negative review ratio
+- Device analytics
+- Browser analytics
+- Location analytics
+- Heatmaps
+- Time-based analytics
+- Campaign analytics
+
+====================================================
+SEARCH & FILTERS
+====================================================
+
+Implement global search with filters:
+- Clients
+- Reviews
+- QR campaigns
+- Billing
+- Managers
+
+====================================================
+AUDIT LOGS
+====================================================
+
+Track:
+- Login history
+- Changes made
+- Billing actions
+- Client edits
+- QR changes
+- Review actions
+
+====================================================
+CLIENT STATUS CONTROL
+====================================================
+
+If subscription expires:
+- Auto-disable QR flow
+- Show expired message
+- Notify admin
+- Notify client
+
+Allow manual override.
+
+====================================================
+PERFORMANCE REQUIREMENTS
+====================================================
+
+- Fast loading
+- Lazy loading
+- Pagination
+- Optimized queries
+- Mobile-first
+- SEO optimized landing pages
+
+====================================================
+DATABASE TABLES
+====================================================
+
+Create PostgreSQL schema for:
+- users
+- roles
+- clients
+- qr_campaigns
+- scans
+- reviews
+- feedback
+- subscriptions
+- invoices
+- payments
+- notifications
+- audit_logs
+- settings
+- google_integrations
+
+Use relational architecture with foreign keys.
+
+====================================================
+SECURITY
+====================================================
+
+Implement:
+- Row-level security
+- Secure APIs
+- JWT auth
+- 2FA
+- Rate limiting
+- Input validation
+- XSS protection
+- CSRF protection
+
+====================================================
+RESPONSIVE DESIGN
+====================================================
+
+Must support:
+- Desktop
+- Tablet
+- Mobile
+
+Mobile dashboard must be highly optimized.
+
+====================================================
+EXTRA FEATURES
+====================================================
+
+Include:
+- White-label branding
+- AI review suggestions
+- Multi-location businesses
+- API access
+- QR analytics map
+- Client activity logs
+- Dark mode architecture ready for future
+- Mobile app backend ready
+
+====================================================
+UI PAGES REQUIRED
+====================================================
+
+Create these pages:
+1. Login
+2. Register
+3. Forgot Password
+4. Dashboard
+5. Clients List
+6. Add Client
+7. Client Details
+8. QR Campaigns
+9. Reviews
+10. Feedback
+11. Billing
+12. Reports
+13. Notifications
+14. Analytics
+15. Settings
+16. User Management
+17. Profile
+18. Audit Logs
+19. Subscription Management
+20. Error Pages
+
+====================================================
+UX REQUIREMENTS
+====================================================
+
+- Clean onboarding flow
+- Toast notifications
+- Confirmation modals
+- Skeleton loaders
+- Empty states
+- Searchable tables
+- Smooth animations
+- Elegant hover effects
+- Premium SaaS transitions
+
+====================================================
+BUILD ORDER
+====================================================
+
+Phase 1:
+- Authentication
+- Dashboard
+- Clients
+- QR system
+
+Phase 2:
+- Review flow
+- Analytics
+- Notifications
+
+Phase 3:
+- Billing
+- Integrations
+- Reports
+
+Phase 4:
+- AI features
+- White-label
+- Advanced analytics
+
+====================================================
+FINAL REQUIREMENTS
+====================================================
+
+Generate:
+- Full frontend
+- Backend APIs
+- Supabase schema
+- Authentication
+- Responsive UI
+- Dummy seed data
+- Environment setup
+- Deployment guide
+- Production-ready architecture
+
+Code should be:
+- Modular
+- Scalable
+- Maintainable
+- Type-safe
+- Clean architecture
+- Enterprise-grade
+
+Build this as a complete SaaS product ready for production deployment.

@@ -1,0 +1,235 @@
+====================================================
+DETAILED REVIEW WORKFLOW LOGIC
+====================================================
+
+The platform works as a smart Google review funnel system.
+
+Each client receives a unique dynamic QR code.
+
+When a customer scans the QR code:
+
+STEP 1:
+Open a mobile-first landing page showing:
+- Client logo
+- Business name
+- “How was your experience?” message
+- 5-star rating selector
+- Premium Google-inspired UI
+- Fast loading responsive design
+
+====================================================
+NEGATIVE FEEDBACK FLOW (1,2,3 STARS)
+====================================================
+
+If customer selects:
+- 1 star
+- 2 stars
+- 3 stars
+
+DO NOT redirect user to Google review page.
+
+Instead:
+Show a private feedback form containing:
+- Feedback textarea
+- Complaint category dropdown
+- Optional customer name
+- Optional phone number
+- Optional email field
+
+On submit:
+1. Store feedback in database
+2. Mark feedback as NEGATIVE
+3. Send instant notifications to:
+   - Client email
+   - Client WhatsApp
+   - Assigned manager
+   - Admin dashboard
+
+4. Add feedback to:
+   - Negative feedback analytics
+   - Client dashboard
+   - Admin dashboard
+
+5. Show thank-you success screen:
+   “Thank you for your feedback.
+   We will work on improving your experience.”
+
+6. Trigger automation:
+   - Email alert
+   - WhatsApp alert
+   - Internal escalation notification
+
+====================================================
+POSITIVE REVIEW FLOW (4,5 STARS)
+====================================================
+
+If customer selects:
+- 4 stars
+- 5 stars
+
+Show a premium review assistance screen.
+
+This screen should contain:
+
+1. AI-generated review suggestions
+2. Recommended keyword chips
+3. Editable review textarea
+4. Copy review button
+5. Continue to Google button
+
+====================================================
+AI REVIEW GENERATION LOGIC
+====================================================
+
+Generate smart review suggestions using:
+- Business category
+- Recommended keywords
+- Client business name
+- Rating score
+
+Example:
+For hotel category:
+- “Excellent stay with great hospitality.”
+- “Clean rooms and amazing service.”
+- “Best hotel experience with friendly staff.”
+
+For hospital category:
+- “Professional doctors and caring staff.”
+- “Excellent treatment and quick response.”
+
+====================================================
+KEYWORD RECOMMENDATION LOGIC
+====================================================
+
+While onboarding clients, admin can add:
+- Recommended keywords
+- SEO keywords
+- Business specialties
+
+Example:
+Hotel:
+- Best hotel
+- Luxury stay
+- Family rooms
+- Near airport
+
+Hospital:
+- Best gastro doctor
+- Advanced treatment
+- Experienced specialists
+
+Restaurant:
+- Best biryani
+- Family restaurant
+- Fast service
+
+When user gives 4 or 5 stars:
+Show these keywords as clickable chips.
+
+When customer clicks keywords:
+Automatically build review sentence.
+
+Example:
+Selected:
+- “Luxury stay”
+- “Friendly staff”
+
+Generated review:
+“Luxury stay with very friendly staff and excellent service.”
+
+====================================================
+GOOGLE REVIEW REDIRECTION LOGIC
+====================================================
+
+After customer finalizes review:
+
+1. Copy review text automatically
+2. Open Google review page in new tab
+3. Redirect user to Google review URL
+4. Show instruction popup:
+   “Your review text has been copied.
+   Simply paste it into Google review box.”
+
+IMPORTANT:
+Follow Google policies strictly.
+
+If direct review posting API is unavailable:
+Implement the smoothest possible review submission experience.
+
+====================================================
+POST REVIEW TRACKING
+====================================================
+
+Track:
+- QR scans
+- Rating selected
+- Review redirect clicks
+- Google submission clicks
+- Conversion percentage
+- Positive vs negative ratio
+
+====================================================
+CLIENT CONTROL LOGIC
+====================================================
+
+If client subscription expires:
+
+1. Disable QR workflow
+2. Show expired message:
+   “This review page is temporarily unavailable.”
+3. Notify admin
+4. Notify client
+
+Super Admin can manually reactivate anytime.
+
+====================================================
+MULTI-LOCATION SUPPORT
+====================================================
+
+Allow one client to manage:
+- Multiple branches
+- Multiple Google Business listings
+- Multiple QR campaigns
+- Separate analytics per location
+
+====================================================
+WHITE LABEL SUPPORT
+====================================================
+
+Allow agencies to:
+- Add custom logo
+- Custom domain
+- Custom colors
+- Remove platform branding
+- Use own SMTP/email branding
+
+====================================================
+AUTOMATION LOGIC
+====================================================
+
+Positive review:
+- Send thank-you email
+- Suggest Google review response
+- Update analytics
+
+Negative feedback:
+- Send escalation alerts
+- Mark priority
+- Notify support team
+- Save customer issue history
+
+====================================================
+ANALYTICS LOGIC
+====================================================
+
+Dashboard analytics should calculate:
+- Review conversion %
+- Positive review %
+- Negative review %
+- QR scan growth
+- Top-performing clients
+- Most active locations
+- Device usage
+- Browser usage
+- Time-based trends
+- Monthly growth
