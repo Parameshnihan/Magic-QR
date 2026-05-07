@@ -57,7 +57,7 @@ const navItems = [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { user, logout: clearAuth } = useAuth();
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
   const logoutMutation = useLogout();
@@ -104,7 +104,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="flex h-14 items-center border-b border-sidebar-border px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-serif font-semibold text-sidebar-foreground text-lg">
               <Star className="h-6 w-6 text-sidebar-primary" />
-              ReviewFlow Pro
+              Advento Magic QR
             </Link>
           </div>
           <div className="flex-1 overflow-auto">
@@ -127,7 +127,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <div className="flex h-14 items-center border-b border-sidebar-border px-4">
                 <Link href="/" className="flex items-center gap-2 font-serif font-semibold text-sidebar-foreground">
                   <Star className="h-6 w-6 text-sidebar-primary" />
-                  ReviewFlow Pro
+                  Advento Magic QR
                 </Link>
               </div>
               <div className="overflow-auto">

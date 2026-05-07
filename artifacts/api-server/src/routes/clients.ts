@@ -91,6 +91,42 @@ router.get("/clients/expiring", async (req, res): Promise<void> => {
   res.json(clients.map(c => formatClient(c)));
 });
 
+router.get("/clients/google-preview", async (req, res): Promise<void> => {
+  const { url } = req.query;
+  if (!url || typeof url !== "string") {
+    res.status(400).json({ error: "url is required" });
+    return;
+  }
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+      signal: AbortSignal.timeout(8000),
+      redirect: "follow",
+    });
+    const html = await response.text();
+    const ogTitle = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)?.[1]
+      || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i)?.[1];
+    const ogDesc = html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i)?.[1]
+      || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:description["']/i)?.[1];
+    const ogImage = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)?.[1]
+      || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)?.[1];
+    const titleTag = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1];
+
+    const title = (ogTitle || titleTag || "").replace(/ - Google Maps$/, "").replace(/ · [^·]+$/, "").trim();
+    res.json({
+      businessName: title || "Business",
+      description: ogDesc || "",
+      image: ogImage || null,
+      resolvedUrl: response.url,
+    });
+  } catch {
+    res.status(502).json({ error: "Could not reach that URL — make sure it is a valid Google Maps review link." });
+  }
+});
+
 router.get("/clients/:id", async (req, res): Promise<void> => {
   const params = GetClientParams.safeParse(req.params);
   if (!params.success) {

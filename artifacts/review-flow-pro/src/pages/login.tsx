@@ -64,7 +64,7 @@ export default function Login() {
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary shadow-lg mb-4">
             <Star className="h-6 w-6 text-primary-foreground" />
           </div>
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground">ReviewFlow Pro</h1>
+          <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground">Advento Magic QR</h1>
           <p className="mt-2 text-muted-foreground">Sign in to manage your reputation</p>
         </div>
 

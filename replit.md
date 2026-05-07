@@ -1,4 +1,4 @@
-# ReviewFlow Pro
+# Advento Magic QR
 
 A production-ready SaaS web application for reputation management and Google review automation. Helps agencies onboard clients, manage Google review funnels via QR codes, track scan analytics, handle negative feedback privately, and manage subscription billing — all from a premium luxury-hospitality-inspired dashboard.
 
@@ -53,7 +53,7 @@ A production-ready SaaS web application for reputation management and Google rev
 
 ## Product
 
-**ReviewFlow Pro** is a SaaS platform for agencies and multi-location businesses to automate Google review generation. Core features:
+**Advento Magic QR** is a SaaS platform for agencies and multi-location businesses to automate Google review generation. Core features:
 - **Client CRM**: Onboard clients with full business profile, logo, Google review link, subscription plan, and assigned manager
 - **QR Campaign Manager**: Generate QR codes for each client/location; scans route customers to a review flow
 - **Review Funnel**: 4-5 star ratings → keyword-assisted review text → Google redirect; 1-3 stars → private feedback form (never hits Google)
