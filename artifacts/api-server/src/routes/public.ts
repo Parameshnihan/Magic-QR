@@ -156,7 +156,7 @@ async function sendFeedbackEmail(opts: {
   const info = await transporter.sendMail({
     from: `"Advento Magic QR" <${settings?.smtpUser ?? "noreply@adventomagicqr.com"}>`,
     to: toEmail,
-    subject: `[${priorityLabel}] ${rating}-Star Feedback — ${businessName}`,
+    subject: `Advento Magic QR — [${priorityLabel}] ${rating}-Star Customer Feedback for ${businessName}`,
     html,
     text: `${priorityLabel}\n\n${businessName} received a ${rating}-star review.\n\nFeedback: "${feedbackText}"\n\nCustomer: ${customerName ?? "Anonymous"}\nPhone: ${customerPhone ?? "Not provided"}\nEmail: ${customerEmail ?? "Not provided"}`,
   });

@@ -1,11 +1,15 @@
 import React, { useState } from "react";
 import {
   useListQrCampaigns,
+  useCreateQrCampaign,
+  useListClients,
+  getListQrCampaignsQueryKey,
 } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, QrCode, Download, ExternalLink } from "lucide-react";
+import { Search, QrCode, Download, ExternalLink, Plus, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -13,8 +17,18 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 interface QrViewState {
   name: string;
@@ -32,18 +46,78 @@ function getQrImageUrl(reviewUrl: string, size = 200) {
 
 export default function GenerateMagicQR() {
   const { data, isLoading } = useListQrCampaigns();
+  const { data: clientsData } = useListClients({ limit: 100 } as never);
+  const createCampaign = useCreateQrCampaign();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const [createOpen, setCreateOpen] = useState(false);
   const [qrView, setQrView] = useState<QrViewState | null>(null);
   const [search, setSearch] = useState("");
 
+  // Create form state
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [campaignName, setCampaignName] = useState("");
+  const [destinationUrl, setDestinationUrl] = useState("");
+
+  const handleClientSelect = (clientId: string) => {
+    setSelectedClientId(clientId);
+    const client = clientsData?.data.find((c) => String(c.id) === clientId);
+    if (client) {
+      setCampaignName(`${client.businessName} — Magic QR`);
+      if (client.googleReviewLink) setDestinationUrl(client.googleReviewLink);
+    }
+  };
+
+  const handleCreate = () => {
+    if (!selectedClientId || !campaignName || !destinationUrl) {
+      toast({ title: "Please fill in all fields", variant: "destructive" });
+      return;
+    }
+    createCampaign.mutate(
+      {
+        data: {
+          clientId: parseInt(selectedClientId),
+          name: campaignName,
+          destinationUrl,
+        },
+      },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListQrCampaignsQueryKey() });
+          toast({ title: "Magic QR generated successfully" });
+          setCreateOpen(false);
+          setSelectedClientId("");
+          setCampaignName("");
+          setDestinationUrl("");
+        },
+        onError: () => {
+          toast({ title: "Failed to generate QR", variant: "destructive" });
+        },
+      }
+    );
+  };
+
   const filtered = data?.data.filter(
-    (c) => !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.clientName?.toLowerCase().includes(search.toLowerCase())
+    (c) =>
+      !search ||
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      c.clientName?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-serif font-bold tracking-tight">Generate Magic QR</h2>
-        <p className="text-muted-foreground">View and download QR codes for each client. QR codes are permanent — toggling a client off pauses the flow without changing the code.</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-3xl font-serif font-bold tracking-tight">Generate Magic QR</h2>
+          <p className="text-muted-foreground">
+            Create and manage QR codes for each client. QR codes are permanent — toggling a client off pauses the flow without changing the code.
+          </p>
+        </div>
+        <Button onClick={() => setCreateOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Generate New QR
+        </Button>
       </div>
 
       <div className="flex items-center space-x-2">
@@ -77,14 +151,16 @@ export default function GenerateMagicQR() {
               [1, 2, 3].map((i) => (
                 <TableRow key={i}>
                   {[150, 120, 80, 40, 40, 60, 100].map((w, j) => (
-                    <TableCell key={j}><Skeleton className={`h-5 w-[${w}px]`} /></TableCell>
+                    <TableCell key={j}>
+                      <Skeleton className="h-5" style={{ width: w }} />
+                    </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : !filtered?.length ? (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                  No QR campaigns found.
+                  No QR campaigns found. Click "Generate New QR" to create one.
                 </TableCell>
               </TableRow>
             ) : (
@@ -112,7 +188,11 @@ export default function GenerateMagicQR() {
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        setQrView({ name: campaign.name, qrCode: campaign.qrCode, clientName: campaign.clientName })
+                        setQrView({
+                          name: campaign.name,
+                          qrCode: campaign.qrCode,
+                          clientName: campaign.clientName,
+                        })
                       }
                     >
                       <QrCode className="mr-1.5 h-3.5 w-3.5" />
@@ -125,6 +205,90 @@ export default function GenerateMagicQR() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Generate New QR Dialog */}
+      <Dialog
+        open={createOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedClientId("");
+            setCampaignName("");
+            setDestinationUrl("");
+          }
+          setCreateOpen(open);
+        }}
+      >
+        <DialogContent className="sm:max-w-[460px]">
+          <DialogHeader>
+            <DialogTitle>Generate New Magic QR</DialogTitle>
+            <DialogDescription>
+              Select a client to generate a permanent QR code for their review funnel.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Client</Label>
+              <Select value={selectedClientId} onValueChange={handleClientSelect}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a client..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {clientsData?.data.map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>
+                      {c.businessName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Campaign Label</Label>
+              <Input
+                placeholder="e.g. Front Desk QR, Table Card..."
+                value={campaignName}
+                onChange={(e) => setCampaignName(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Google Review Link</Label>
+              <Input
+                placeholder="https://g.page/r/.../review"
+                value={destinationUrl}
+                onChange={(e) => setDestinationUrl(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Auto-filled from the client's profile. 4–5 star raters are redirected here.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCreateOpen(false)}
+              disabled={createCampaign.isPending}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleCreate} disabled={createCampaign.isPending}>
+              {createCampaign.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <QrCode className="mr-2 h-4 w-4" />
+                  Generate QR
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* QR Code View Dialog */}
       {qrView && (
