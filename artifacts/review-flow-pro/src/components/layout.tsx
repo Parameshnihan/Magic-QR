@@ -45,7 +45,7 @@ import { useToast } from "@/hooks/use-toast";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/clients", label: "Clients", icon: Users },
-  { href: "/qr-campaigns", label: "QR Campaigns", icon: QrCode },
+  { href: "/qr-campaigns", label: "Generate Magic QR", icon: QrCode },
   { href: "/reviews", label: "Reviews", icon: Star },
   { href: "/feedback", label: "Feedback", icon: MessageSquareWarning },
   { href: "/billing", label: "Billing", icon: CreditCard },
