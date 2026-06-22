@@ -1582,6 +1582,14 @@ components:
           type: ["string", "null"]
         customDomain:
           type: ["string", "null"]
+        smtpHost:
+          type: ["string", "null"]
+        smtpPort:
+          type: ["integer", "null"]
+        smtpUser:
+          type: ["string", "null"]
+        smtpPass:
+          type: ["string", "null"]
         totalScans:
           type: integer
         totalReviews:
@@ -1634,6 +1642,14 @@ components:
           type: ["string", "null"]
         customDomain:
           type: ["string", "null"]
+        smtpHost:
+          type: ["string", "null"]
+        smtpPort:
+          type: ["integer", "null"]
+        smtpUser:
+          type: ["string", "null"]
+        smtpPass:
+          type: ["string", "null"]
       required: [name, businessName, businessCategory, phone, email, subscriptionPlan]
 
     UpdateClientBody:
@@ -1676,6 +1692,14 @@ components:
         notes:
           type: ["string", "null"]
         customDomain:
+          type: ["string", "null"]
+        smtpHost:
+          type: ["string", "null"]
+        smtpPort:
+          type: ["integer", "null"]
+        smtpUser:
+          type: ["string", "null"]
+        smtpPass:
           type: ["string", "null"]
 
     PaginatedClients:

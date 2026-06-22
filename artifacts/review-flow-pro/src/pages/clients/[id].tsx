@@ -1,19 +1,27 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams, Link } from "wouter";
 import {
   useGetClient, getGetClientQueryKey,
   useGetClientStats, getGetClientStatsQueryKey,
-  useListQrCampaigns,
-  useListReviews,
-  useListFeedback,
+  useListQrCampaigns, getListQrCampaignsQueryKey,
+  useListReviews, getListReviewsQueryKey,
+  useListFeedback, getListFeedbackQueryKey,
+  useUpdateClient,
+  useGetSettings,
 } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building, Phone, Mail, MapPin, Globe, Star, QrCode, ExternalLink, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Building, Phone, Mail, MapPin, Globe, Star, QrCode, ExternalLink, Plus, Eye, EyeOff, Copy, CheckCircle, Send } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
+import { useSendTestEmail } from "@workspace/api-client-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -27,26 +35,89 @@ function StarRating({ rating }: { rating: number }) {
 export default function ClientDetail() {
   const { id } = useParams();
   const clientId = parseInt(id || "0", 10);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: client, isLoading: isClientLoading } = useGetClient(clientId, {
     query: { enabled: !!clientId, queryKey: getGetClientQueryKey(clientId) },
   });
-
   const { data: stats, isLoading: isStatsLoading } = useGetClientStats(clientId, {
     query: { enabled: !!clientId, queryKey: getGetClientStatsQueryKey(clientId) },
   });
+  const { data: campaigns } = useListQrCampaigns({ clientId }, { query: { enabled: !!clientId, queryKey: getListQrCampaignsQueryKey({ clientId }) } });
+  const { data: reviews } = useListReviews({ clientId }, { query: { enabled: !!clientId, queryKey: getListReviewsQueryKey({ clientId }) } });
+  const { data: feedback } = useListFeedback({ clientId }, { query: { enabled: !!clientId, queryKey: getListFeedbackQueryKey({ clientId }) } });
+  const { data: globalSettings } = useGetSettings();
+  const updateClient = useUpdateClient();
+  const sendTestEmail = useSendTestEmail();
 
-  const { data: campaigns } = useListQrCampaigns({ clientId }, {
-    query: { enabled: !!clientId },
-  });
+  const [smtpHost, setSmtpHost] = useState("");
+  const [smtpPort, setSmtpPort] = useState("");
+  const [smtpUser, setSmtpUser] = useState("");
+  const [smtpPass, setSmtpPass] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [smtpLoaded, setSmtpLoaded] = useState(false);
+  const [testEmailAddr, setTestEmailAddr] = useState("");
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string; previewUrl?: string | null } | null>(null);
 
-  const { data: reviews } = useListReviews({ clientId }, {
-    query: { enabled: !!clientId },
-  });
+  // Load SMTP values from client once
+  React.useEffect(() => {
+    if (client && !smtpLoaded) {
+      setSmtpHost(client.smtpHost ?? "");
+      setSmtpPort(client.smtpPort ? String(client.smtpPort) : "");
+      setSmtpUser(client.smtpUser ?? "");
+      setSmtpPass(client.smtpPass ?? "");
+      setSmtpLoaded(true);
+    }
+  }, [client, smtpLoaded]);
 
-  const { data: feedback } = useListFeedback({ clientId }, {
-    query: { enabled: !!clientId },
-  });
+  const applyGlobalSmtp = () => {
+    if (!globalSettings?.smtpHost) {
+      toast({ title: "No global SMTP configured in Settings", variant: "destructive" });
+      return;
+    }
+    setSmtpHost(globalSettings.smtpHost ?? "");
+    setSmtpPort(globalSettings.smtpPort ? String(globalSettings.smtpPort) : "");
+    setSmtpUser(globalSettings.smtpUser ?? "");
+    setSmtpPass(globalSettings.smtpPass ?? "");
+    toast({ title: "Global SMTP settings applied" });
+  };
+
+  const saveSmtp = () => {
+    updateClient.mutate(
+      {
+        id: clientId,
+        data: {
+          smtpHost: smtpHost || null,
+          smtpPort: smtpPort ? parseInt(smtpPort, 10) : null,
+          smtpUser: smtpUser || null,
+          smtpPass: smtpPass || null,
+        },
+      },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetClientQueryKey(clientId) });
+          toast({ title: "SMTP settings saved" });
+        },
+        onError: () => toast({ title: "Failed to save SMTP settings", variant: "destructive" }),
+      }
+    );
+  };
+
+  const handleTestEmail = () => {
+    if (!testEmailAddr) {
+      toast({ title: "Enter a recipient email address", variant: "destructive" });
+      return;
+    }
+    setTestResult(null);
+    sendTestEmail.mutate(
+      { data: { toEmail: testEmailAddr } },
+      {
+        onSuccess: (r) => setTestResult(r),
+        onError: () => setTestResult({ success: false, message: "Failed to send test email." }),
+      }
+    );
+  };
 
   if (isClientLoading || !client) {
     return (
@@ -57,6 +128,8 @@ export default function ClientDetail() {
       </div>
     );
   }
+
+  const hasClientSmtp = !!(client.smtpHost && client.smtpUser);
 
   return (
     <div className="space-y-6">
@@ -82,6 +155,11 @@ export default function ClientDetail() {
               </Badge>
               {client.businessCategory && (
                 <Badge variant="outline">{client.businessCategory}</Badge>
+              )}
+              {hasClientSmtp && (
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  Custom SMTP
+                </Badge>
               )}
             </div>
           </div>
@@ -204,6 +282,14 @@ export default function ClientDetail() {
                 {feedback.data.length}
               </span>
             ) : null}
+          </TabsTrigger>
+          <TabsTrigger value="smtp">
+            Email / SMTP
+            {hasClientSmtp && (
+              <span className="ml-1.5 rounded-full bg-green-100 text-green-700 text-xs px-1.5 py-0.5">
+                Set
+              </span>
+            )}
           </TabsTrigger>
         </TabsList>
 
@@ -353,6 +439,136 @@ export default function ClientDetail() {
                     ))}
                   </TableBody>
                 </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="smtp" className="pt-4 space-y-4">
+          {/* SMTP Config Card */}
+          <Card className="border-none shadow-sm">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">Client SMTP Configuration</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Set a custom SMTP server for this client. Feedback emails will be sent from this server instead of the platform SMTP.
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={applyGlobalSmtp}>
+                  <Copy className="mr-1.5 h-3.5 w-3.5" />
+                  Use Global SMTP
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>SMTP Host</Label>
+                  <Input
+                    placeholder="smtp.gmail.com"
+                    value={smtpHost}
+                    onChange={(e) => setSmtpHost(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>SMTP Port</Label>
+                  <Input
+                    type="number"
+                    placeholder="587"
+                    value={smtpPort}
+                    onChange={(e) => setSmtpPort(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>SMTP Username / Email</Label>
+                  <Input
+                    placeholder="alerts@clientdomain.com"
+                    value={smtpUser}
+                    onChange={(e) => setSmtpUser(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>SMTP Password</Label>
+                  <div className="relative">
+                    <Input
+                      type={showPass ? "text" : "password"}
+                      placeholder="App password"
+                      value={smtpPass}
+                      onChange={(e) => setSmtpPass(e.target.value)}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPass(!showPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={saveSmtp} disabled={updateClient.isPending}>
+                  {updateClient.isPending ? "Saving..." : "Save SMTP Settings"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Test Email Card */}
+          <Card className="border-none shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg">Send Test Email</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Verify the SMTP configuration by sending a test email. Save settings first before testing.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-3">
+                <Input
+                  type="email"
+                  placeholder="recipient@example.com"
+                  value={testEmailAddr}
+                  onChange={(e) => setTestEmailAddr(e.target.value)}
+                  className="max-w-sm"
+                />
+                <Button
+                  variant="outline"
+                  onClick={handleTestEmail}
+                  disabled={sendTestEmail.isPending}
+                >
+                  <Send className="mr-1.5 h-4 w-4" />
+                  {sendTestEmail.isPending ? "Sending..." : "Send Test Email"}
+                </Button>
+              </div>
+
+              {testResult && (
+                <Alert className={testResult.success ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
+                  {testResult.success
+                    ? <CheckCircle className="h-4 w-4 text-green-600" />
+                    : <Mail className="h-4 w-4 text-red-600" />
+                  }
+                  <AlertDescription className={testResult.success ? "text-green-800" : "text-red-800"}>
+                    <span>{testResult.message}</span>
+                    {testResult.previewUrl && (
+                      <a
+                        href={testResult.previewUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-2 inline-flex items-center gap-1 underline font-medium"
+                      >
+                        View email <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {!hasClientSmtp && !smtpHost && (
+                <p className="text-sm text-muted-foreground">
+                  No client SMTP configured — test will use the platform SMTP or Ethereal fallback.
+                </p>
               )}
             </CardContent>
           </Card>

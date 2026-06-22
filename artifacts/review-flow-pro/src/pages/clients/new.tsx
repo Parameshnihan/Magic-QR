@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocation } from "wouter";
-import { useCreateClient, getListClientsQueryKey } from "@workspace/api-client-react";
+import { useCreateClient, useGetSettings, getListClientsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Loader2, CheckCircle, Globe, Building, AlertCircle, Upload, X, ImageIcon } from "lucide-react";
+import { ArrowLeft, Loader2, CheckCircle, Globe, Building, AlertCircle, Upload, X, ImageIcon, Mail, Eye, EyeOff, Copy } from "lucide-react";
 import { Link } from "wouter";
 import { useUpload } from "@workspace/object-storage-web";
 
@@ -29,6 +29,10 @@ const clientSchema = z.object({
   googleReviewLink: z.string().url("Must be a valid Google review URL").optional().or(z.literal("")),
   subscriptionPlan: z.enum(["basic", "professional", "enterprise"]),
   notes: z.string().optional(),
+  smtpHost: z.string().optional(),
+  smtpPort: z.coerce.number().optional(),
+  smtpUser: z.string().optional(),
+  smtpPass: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof clientSchema>;
@@ -44,11 +48,13 @@ export default function NewClient() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const createClient = useCreateClient();
+  const { data: globalSettings } = useGetSettings();
   const queryClient = useQueryClient();
   const [googlePreview, setGooglePreview] = useState<GooglePreview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [showSmtpPass, setShowSmtpPass] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { uploadFile, isUploading, progress } = useUpload({
@@ -78,8 +84,24 @@ export default function NewClient() {
       googleReviewLink: "",
       subscriptionPlan: "basic",
       notes: "",
+      smtpHost: "",
+      smtpPort: undefined,
+      smtpUser: "",
+      smtpPass: "",
     },
   });
+
+  const applyGlobalSmtp = useCallback(() => {
+    if (!globalSettings?.smtpHost) {
+      toast({ title: "No global SMTP configured in Settings", variant: "destructive" });
+      return;
+    }
+    form.setValue("smtpHost", globalSettings.smtpHost ?? "");
+    form.setValue("smtpPort", globalSettings.smtpPort ?? undefined);
+    form.setValue("smtpUser", globalSettings.smtpUser ?? "");
+    form.setValue("smtpPass", globalSettings.smtpPass ?? "");
+    toast({ title: "Global SMTP settings applied" });
+  }, [globalSettings, form, toast]);
 
   const handleLogoFile = useCallback(async (file: File) => {
     const objectUrl = URL.createObjectURL(file);
@@ -140,6 +162,10 @@ export default function NewClient() {
       whatsappNumber: data.whatsappNumber || undefined,
       address: data.address || undefined,
       notes: data.notes || undefined,
+      smtpHost: data.smtpHost || undefined,
+      smtpPort: data.smtpPort || undefined,
+      smtpUser: data.smtpUser || undefined,
+      smtpPass: data.smtpPass || undefined,
     };
     createClient.mutate(
       { data: payload },
@@ -466,6 +492,96 @@ export default function NewClient() {
                       <FormLabel>Internal Notes <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
                       <FormControl>
                         <Textarea placeholder="Any internal notes about this client..." rows={3} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* SMTP Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="h-5 w-5 text-primary" />
+                Email / SMTP Settings
+                <span className="text-sm font-normal text-muted-foreground">(optional)</span>
+              </CardTitle>
+              <CardDescription>
+                Configure this client's own SMTP server for feedback email alerts. Leave blank to use the platform's global SMTP.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-end">
+                <Button type="button" variant="outline" size="sm" onClick={applyGlobalSmtp}>
+                  <Copy className="mr-1.5 h-3.5 w-3.5" />
+                  Use Global SMTP
+                </Button>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="smtpHost"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>SMTP Host</FormLabel>
+                      <FormControl>
+                        <Input placeholder="smtp.gmail.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="smtpPort"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>SMTP Port</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="587" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="smtpUser"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>SMTP Username / Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="alerts@clientdomain.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="smtpPass"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>SMTP Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showSmtpPass ? "text" : "password"}
+                            placeholder="App password"
+                            {...field}
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowSmtpPass(!showSmtpPass)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showSmtpPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

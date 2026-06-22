@@ -91,35 +91,44 @@ async function sendFeedbackEmail(opts: {
   customerName?: string | null;
   customerPhone?: string | null;
   customerEmail?: string | null;
+  clientSmtp?: { host?: string | null; port?: number | null; user?: string | null; pass?: string | null };
   log?: { info: (obj: unknown, msg?: string) => void; warn: (obj: unknown, msg?: string) => void; error: (obj: unknown, msg?: string) => void };
 }) {
-  const { toEmail, businessName, rating, feedbackText, customerName, customerPhone, customerEmail, log } = opts;
+  const { toEmail, businessName, rating, feedbackText, customerName, customerPhone, customerEmail, clientSmtp, log } = opts;
 
   let transporter: nodemailer.Transporter;
+  let fromAddress = "noreply@adventomagicqr.com";
 
-  // Try using configured SMTP from settings
-  const [settings] = await db.select().from(settingsTable).limit(1);
-  if (settings?.smtpHost && settings?.smtpUser && settings?.smtpPass) {
+  // Priority: client SMTP → global platform SMTP → Ethereal fallback
+  if (clientSmtp?.host && clientSmtp?.user && clientSmtp?.pass) {
+    const port = clientSmtp.port ?? 587;
     transporter = nodemailer.createTransport({
-      host: settings.smtpHost,
-      port: settings.smtpPort ?? 587,
-      secure: (settings.smtpPort ?? 587) === 465,
-      auth: {
-        user: settings.smtpUser,
-        pass: settings.smtpPass,
-      },
+      host: clientSmtp.host,
+      port,
+      secure: port === 465,
+      auth: { user: clientSmtp.user, pass: clientSmtp.pass },
     });
+    fromAddress = clientSmtp.user;
   } else {
-    // Fall back to Ethereal test account (captures email for preview in dev)
-    const testAccount = await nodemailer.createTestAccount();
-    transporter = nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-    });
+    const [settings] = await db.select().from(settingsTable).limit(1);
+    if (settings?.smtpHost && settings?.smtpUser && settings?.smtpPass) {
+      const port = settings.smtpPort ?? 587;
+      transporter = nodemailer.createTransport({
+        host: settings.smtpHost,
+        port,
+        secure: port === 465,
+        auth: { user: settings.smtpUser, pass: settings.smtpPass },
+      });
+      fromAddress = settings.smtpUser;
+    } else {
+      // Fall back to Ethereal test account (captures email for preview in dev)
+      const testAccount = await nodemailer.createTestAccount();
+      transporter = nodemailer.createTransport({
+        host: "smtp.ethereal.email",
+        port: 587,
+        auth: { user: testAccount.user, pass: testAccount.pass },
+      });
+    }
   }
 
   const stars = "★".repeat(rating) + "☆".repeat(5 - rating);
@@ -154,7 +163,7 @@ async function sendFeedbackEmail(opts: {
 </html>`;
 
   const info = await transporter.sendMail({
-    from: `"Advento Magic QR" <${settings?.smtpUser ?? "noreply@adventomagicqr.com"}>`,
+    from: `"Advento Magic QR" <${fromAddress}>`,
     to: toEmail,
     subject: `Advento Magic QR — [${priorityLabel}] ${rating}-Star Customer Feedback for ${businessName}`,
     html,
@@ -304,6 +313,12 @@ router.post("/public/review/:qrCode/submit", async (req, res): Promise<void> => 
           customerName: customerName ?? null,
           customerPhone: customerPhone ?? null,
           customerEmail: customerEmail ?? null,
+          clientSmtp: {
+            host: client.smtpHost,
+            port: client.smtpPort,
+            user: client.smtpUser,
+            pass: client.smtpPass,
+          },
           log: req.log,
         }).catch((err) => req.log?.error({ err }, "Failed to send feedback email"));
       }
@@ -335,7 +350,6 @@ router.post("/public/review/:qrCode/scan", async (req, res): Promise<void> => {
       clientId: campaign.clientId,
       deviceType: body.data.deviceType ?? null,
       userAgent: body.data.userAgent ?? null,
-      location: body.data.location ?? null,
     });
   }
 

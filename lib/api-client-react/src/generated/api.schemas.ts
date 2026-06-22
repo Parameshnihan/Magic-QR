@@ -163,6 +163,14 @@ export interface Client {
   notes?: string | null;
   /** @nullable */
   customDomain?: string | null;
+  /** @nullable */
+  smtpHost?: string | null;
+  /** @nullable */
+  smtpPort?: number | null;
+  /** @nullable */
+  smtpUser?: string | null;
+  /** @nullable */
+  smtpPass?: string | null;
   totalScans: number;
   totalReviews: number;
   positiveReviews: number;
@@ -206,6 +214,14 @@ export interface CreateClientBody {
   notes?: string | null;
   /** @nullable */
   customDomain?: string | null;
+  /** @nullable */
+  smtpHost?: string | null;
+  /** @nullable */
+  smtpPort?: number | null;
+  /** @nullable */
+  smtpUser?: string | null;
+  /** @nullable */
+  smtpPass?: string | null;
 }
 
 export interface UpdateClientBody {
@@ -236,6 +252,14 @@ export interface UpdateClientBody {
   notes?: string | null;
   /** @nullable */
   customDomain?: string | null;
+  /** @nullable */
+  smtpHost?: string | null;
+  /** @nullable */
+  smtpPort?: number | null;
+  /** @nullable */
+  smtpUser?: string | null;
+  /** @nullable */
+  smtpPass?: string | null;
 }
 
 export interface PaginatedClients {
