@@ -49,6 +49,12 @@ const getPriorityColor = (priority: string) => {
   }
 };
 
+const getStatusVariant = (status: string): "default" | "secondary" | "outline" => {
+  if (status === "resolved" || status === "closed") return "secondary";
+  if (status === "in_progress") return "default";
+  return "outline";
+};
+
 export default function Feedback() {
   const { data, isLoading } = useListFeedback();
   const updateFeedback = useUpdateFeedback();
@@ -166,7 +172,7 @@ export default function Feedback() {
                   </TableCell>
                   <TableCell>
                     <Badge
-                      variant={item.status === "resolved" ? "secondary" : "default"}
+                      variant={getStatusVariant(item.status)}
                       className="capitalize"
                     >
                       {item.status.replace("_", " ")}
@@ -250,6 +256,7 @@ export default function Feedback() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="new">New</SelectItem>
                     <SelectItem value="open">Open</SelectItem>
                     <SelectItem value="in_progress">In Progress</SelectItem>
                     <SelectItem value="resolved">Resolved</SelectItem>

@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 import { db, feedbackTable, clientsTable } from "@workspace/db";
 import {
   ListFeedbackQueryParams,
@@ -28,11 +28,11 @@ router.get("/feedback", async (req, res): Promise<void> => {
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
-  const feedbackList = await db.select().from(feedbackTable).where(where).orderBy(feedbackTable.createdAt).limit(limit).offset(offset);
+  const feedbackList = await db.select().from(feedbackTable).where(where).orderBy(desc(feedbackTable.createdAt)).limit(limit).offset(offset);
   const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(feedbackTable).where(where);
 
-  const clients = await db.select({ id: clientsTable.id, name: clientsTable.name }).from(clientsTable);
-  const clientMap = Object.fromEntries(clients.map(c => [c.id, c.name]));
+  const clients = await db.select({ id: clientsTable.id, businessName: clientsTable.businessName }).from(clientsTable);
+  const clientMap = Object.fromEntries(clients.map(c => [c.id, c.businessName]));
 
   res.json({
     data: feedbackList.map(f => ({ ...f, clientName: clientMap[f.clientId] ?? "Unknown" })),
@@ -55,8 +55,8 @@ router.get("/feedback/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [client] = await db.select({ name: clientsTable.name }).from(clientsTable).where(eq(clientsTable.id, item.clientId));
-  res.json({ ...item, clientName: client?.name ?? "Unknown" });
+  const [client] = await db.select({ businessName: clientsTable.businessName }).from(clientsTable).where(eq(clientsTable.id, item.clientId));
+  res.json({ ...item, clientName: client?.businessName ?? "Unknown" });
 });
 
 router.patch("/feedback/:id", async (req, res): Promise<void> => {
@@ -78,8 +78,8 @@ router.patch("/feedback/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [client] = await db.select({ name: clientsTable.name }).from(clientsTable).where(eq(clientsTable.id, item.clientId));
-  res.json({ ...item, clientName: client?.name ?? "Unknown" });
+  const [client] = await db.select({ businessName: clientsTable.businessName }).from(clientsTable).where(eq(clientsTable.id, item.clientId));
+  res.json({ ...item, clientName: client?.businessName ?? "Unknown" });
 });
 
 export default router;

@@ -295,12 +295,12 @@ router.post("/public/review/:qrCode/submit", async (req, res): Promise<void> => 
       }
 
       // Send email to the client's registered email
-      if (client.email && feedbackText) {
+      if (client.email) {
         sendFeedbackEmail({
           toEmail: client.email,
           businessName: client.businessName,
           rating,
-          feedbackText,
+          feedbackText: feedbackText || "No additional comments provided.",
           customerName: customerName ?? null,
           customerPhone: customerPhone ?? null,
           customerEmail: customerEmail ?? null,
