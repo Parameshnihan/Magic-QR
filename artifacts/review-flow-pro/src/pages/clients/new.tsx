@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,8 +12,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Loader2, CheckCircle, Globe, Building, MapPin, AlertCircle } from "lucide-react";
+import { ArrowLeft, Loader2, CheckCircle, Globe, Building, AlertCircle, Upload, X, ImageIcon } from "lucide-react";
 import { Link } from "wouter";
+import { useUpload } from "@workspace/object-storage-web";
 
 const clientSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -24,7 +25,7 @@ const clientSchema = z.object({
   whatsappNumber: z.string().optional(),
   email: z.string().email("Invalid email"),
   address: z.string().optional(),
-  logoUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  logoUrl: z.string().optional(),
   googleReviewLink: z.string().url("Must be a valid Google review URL").optional().or(z.literal("")),
   subscriptionPlan: z.enum(["basic", "professional", "enterprise"]),
   notes: z.string().optional(),
@@ -47,6 +48,20 @@ export default function NewClient() {
   const [googlePreview, setGooglePreview] = useState<GooglePreview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { uploadFile, isUploading, progress } = useUpload({
+    onSuccess: (response) => {
+      const serveUrl = `/api/storage${response.objectPath}`;
+      form.setValue("logoUrl", serveUrl);
+      setLogoPreview(serveUrl);
+      toast({ title: "Logo uploaded successfully" });
+    },
+    onError: (err) => {
+      toast({ title: "Logo upload failed", description: err.message, variant: "destructive" });
+    },
+  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(clientSchema),
@@ -65,6 +80,29 @@ export default function NewClient() {
       notes: "",
     },
   });
+
+  const handleLogoFile = useCallback(async (file: File) => {
+    const objectUrl = URL.createObjectURL(file);
+    setLogoPreview(objectUrl);
+    await uploadFile(file);
+  }, [uploadFile]);
+
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleLogoFile(file);
+  }, [handleLogoFile]);
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) handleLogoFile(file);
+  }, [handleLogoFile]);
+
+  const clearLogo = useCallback(() => {
+    setLogoPreview(null);
+    form.setValue("logoUrl", "");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, [form]);
 
   const verifyGoogleLink = useCallback(async () => {
     const url = form.getValues("googleReviewLink");
@@ -325,27 +363,88 @@ export default function NewClient() {
                     </FormItem>
                   )}
                 />
+
+                {/* Logo Upload */}
                 <FormField
                   control={form.control}
                   name="logoUrl"
-                  render={({ field }) => (
+                  render={() => (
                     <FormItem>
-                      <FormLabel>Logo URL <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://example.com/logo.png" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                      {field.value && (
-                        <img
-                          src={field.value}
-                          alt="Logo preview"
-                          className="h-12 w-12 rounded-lg object-contain border mt-1"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      <FormLabel>Business Logo <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                      <div
+                        onDrop={handleDrop}
+                        onDragOver={(e) => e.preventDefault()}
+                        className="relative"
+                      >
+                        {logoPreview ? (
+                          <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
+                            <img
+                              src={logoPreview}
+                              alt="Logo preview"
+                              className="h-14 w-14 rounded-lg object-contain border border-border bg-white shrink-0"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              {isUploading ? (
+                                <div className="space-y-1.5">
+                                  <p className="text-sm text-muted-foreground">Uploading...</p>
+                                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                                    <div
+                                      className="h-full bg-primary transition-all duration-300 rounded-full"
+                                      style={{ width: `${progress}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-green-700 font-medium flex items-center gap-1.5">
+                                  <CheckCircle className="h-4 w-4" />
+                                  Logo uploaded
+                                </p>
+                              )}
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={clearLogo}
+                              className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading}
+                            className="w-full flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/20 px-4 py-6 text-center hover:bg-muted/40 hover:border-primary/40 transition-colors cursor-pointer"
+                          >
+                            <div className="rounded-full bg-primary/10 p-2.5">
+                              <ImageIcon className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-foreground">Upload logo</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">PNG, JPG, SVG, WebP — drag & drop or click</p>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-primary font-medium">
+                              <Upload className="h-3.5 w-3.5" />
+                              Choose file
+                            </div>
+                          </button>
+                        )}
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleFileChange}
                         />
-                      )}
+                      </div>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
                   name="address"
@@ -380,7 +479,7 @@ export default function NewClient() {
             <Button variant="outline" asChild>
               <Link href="/clients">Cancel</Link>
             </Button>
-            <Button type="submit" disabled={createClient.isPending}>
+            <Button type="submit" disabled={createClient.isPending || isUploading}>
               {createClient.isPending ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</>
               ) : (
