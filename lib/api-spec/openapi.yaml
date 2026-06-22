@@ -1190,6 +1190,37 @@ paths:
               schema:
                 $ref: "#/components/schemas/Settings"
 
+  /settings/test-email:
+    post:
+      operationId: sendTestEmail
+      tags: [settings]
+      summary: Send a test email to verify SMTP configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestEmailBody"
+      responses:
+        "200":
+          description: Test email sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestEmailResponse"
+        "400":
+          description: Missing recipient email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Failed to send email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   # ─── Public Review Flow ───
   /public/review/{qrCode}:
     get:
@@ -2219,6 +2250,8 @@ components:
           type: ["integer", "null"]
         smtpUser:
           type: ["string", "null"]
+        smtpPass:
+          type: ["string", "null"]
         whatsappApiKey:
           type: ["string", "null"]
         stripePublicKey:
@@ -2246,6 +2279,8 @@ components:
           type: ["integer", "null"]
         smtpUser:
           type: ["string", "null"]
+        smtpPass:
+          type: ["string", "null"]
         whatsappApiKey:
           type: ["string", "null"]
         stripePublicKey:
@@ -2254,6 +2289,24 @@ components:
           type: ["string", "null"]
         googleApiEnabled:
           type: boolean
+
+    TestEmailBody:
+      type: object
+      properties:
+        toEmail:
+          type: string
+      required: [toEmail]
+
+    TestEmailResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        previewUrl:
+          type: ["string", "null"]
+      required: [success, message]
 
     # ─── Public Review Flow ───
     PublicReviewPageData:

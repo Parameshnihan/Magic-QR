@@ -10,6 +10,7 @@ export const settingsTable = pgTable("settings", {
   smtpHost: text("smtp_host"),
   smtpPort: integer("smtp_port"),
   smtpUser: text("smtp_user"),
+  smtpPass: text("smtp_pass"),
   whatsappApiKey: text("whatsapp_api_key"),
   stripePublicKey: text("stripe_public_key"),
   razorpayKeyId: text("razorpay_key_id"),

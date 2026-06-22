@@ -1132,6 +1132,7 @@ export const GetSettingsResponse = zod.object({
   smtpHost: zod.string().nullish(),
   smtpPort: zod.number().nullish(),
   smtpUser: zod.string().nullish(),
+  smtpPass: zod.string().nullish(),
   whatsappApiKey: zod.string().nullish(),
   stripePublicKey: zod.string().nullish(),
   razorpayKeyId: zod.string().nullish(),
@@ -1149,6 +1150,7 @@ export const UpdateSettingsBody = zod.object({
   smtpHost: zod.string().nullish(),
   smtpPort: zod.number().nullish(),
   smtpUser: zod.string().nullish(),
+  smtpPass: zod.string().nullish(),
   whatsappApiKey: zod.string().nullish(),
   stripePublicKey: zod.string().nullish(),
   razorpayKeyId: zod.string().nullish(),
@@ -1163,11 +1165,25 @@ export const UpdateSettingsResponse = zod.object({
   smtpHost: zod.string().nullish(),
   smtpPort: zod.number().nullish(),
   smtpUser: zod.string().nullish(),
+  smtpPass: zod.string().nullish(),
   whatsappApiKey: zod.string().nullish(),
   stripePublicKey: zod.string().nullish(),
   razorpayKeyId: zod.string().nullish(),
   googleApiEnabled: zod.boolean(),
   updatedAt: zod.string(),
+});
+
+/**
+ * @summary Send a test email to verify SMTP configuration
+ */
+export const SendTestEmailBody = zod.object({
+  toEmail: zod.string(),
+});
+
+export const SendTestEmailResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string(),
+  previewUrl: zod.string().nullish(),
 });
 
 /**

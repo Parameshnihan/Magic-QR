@@ -646,6 +646,8 @@ export interface Settings {
   /** @nullable */
   smtpUser?: string | null;
   /** @nullable */
+  smtpPass?: string | null;
+  /** @nullable */
   whatsappApiKey?: string | null;
   /** @nullable */
   stripePublicKey?: string | null;
@@ -667,12 +669,25 @@ export interface UpdateSettingsBody {
   /** @nullable */
   smtpUser?: string | null;
   /** @nullable */
+  smtpPass?: string | null;
+  /** @nullable */
   whatsappApiKey?: string | null;
   /** @nullable */
   stripePublicKey?: string | null;
   /** @nullable */
   razorpayKeyId?: string | null;
   googleApiEnabled?: boolean;
+}
+
+export interface TestEmailBody {
+  toEmail: string;
+}
+
+export interface TestEmailResponse {
+  success: boolean;
+  message: string;
+  /** @nullable */
+  previewUrl?: string | null;
 }
 
 export interface PublicReviewPageData {

@@ -99,14 +99,14 @@ async function sendFeedbackEmail(opts: {
 
   // Try using configured SMTP from settings
   const [settings] = await db.select().from(settingsTable).limit(1);
-  if (settings?.smtpHost && settings?.smtpUser) {
+  if (settings?.smtpHost && settings?.smtpUser && settings?.smtpPass) {
     transporter = nodemailer.createTransport({
       host: settings.smtpHost,
       port: settings.smtpPort ?? 587,
       secure: (settings.smtpPort ?? 587) === 465,
       auth: {
         user: settings.smtpUser,
-        pass: process.env.SMTP_PASS ?? "",
+        pass: settings.smtpPass,
       },
     });
   } else {
