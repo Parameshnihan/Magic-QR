@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { useParams, Link } from "wouter";
 import {
   useGetClient, getGetClientQueryKey,
@@ -8,20 +8,23 @@ import {
   useListFeedback, getListFeedbackQueryKey,
   useUpdateClient,
   useGetSettings,
+  useSendTestEmail,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building, Phone, Mail, MapPin, Globe, Star, QrCode, ExternalLink, Plus, Eye, EyeOff, Copy, CheckCircle, Send } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Building, Phone, Mail, MapPin, Globe, Star, QrCode, ExternalLink, Plus, Eye, EyeOff, Copy, Send, Upload, X, ImageIcon, Edit2, Save, Loader2, CheckCircle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { useSendTestEmail } from "@workspace/api-client-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useUpload } from "@workspace/object-storage-web";
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -51,6 +54,101 @@ export default function ClientDetail() {
   const updateClient = useUpdateClient();
   const sendTestEmail = useSendTestEmail();
 
+  // ── Edit Details state ────────────────────────────────────────────────────
+  const [editLoaded, setEditLoaded] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editBusinessName, setEditBusinessName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editAddress, setEditAddress] = useState("");
+  const [editGoogleReviewLink, setEditGoogleReviewLink] = useState("");
+  const [editBusinessCategory, setEditBusinessCategory] = useState("");
+  const [editSubscriptionPlan, setEditSubscriptionPlan] = useState("basic");
+  const [editStatus, setEditStatus] = useState("active");
+  const [editNotes, setEditNotes] = useState("");
+  const [editLogoUrl, setEditLogoUrl] = useState("");
+  const [editLogoPreview, setEditLogoPreview] = useState<string | null>(null);
+  const [editKeywords, setEditKeywords] = useState("");
+  const [editWhatsapp, setEditWhatsapp] = useState("");
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const { uploadFile, isUploading } = useUpload({
+    onSuccess: (response) => {
+      const serveUrl = `/api/storage${response.objectPath}`;
+      setEditLogoUrl(serveUrl);
+      setEditLogoPreview(serveUrl);
+    },
+    onError: () => toast({ title: "Logo upload failed", variant: "destructive" }),
+  });
+
+  React.useEffect(() => {
+    if (client && !editLoaded) {
+      setEditName(client.name ?? "");
+      setEditBusinessName(client.businessName ?? "");
+      setEditEmail(client.email ?? "");
+      setEditPhone(client.phone ?? "");
+      setEditAddress(client.address ?? "");
+      setEditGoogleReviewLink(client.googleReviewLink ?? "");
+      setEditBusinessCategory(client.businessCategory ?? "");
+      setEditSubscriptionPlan(client.subscriptionPlan ?? "basic");
+      setEditStatus(client.status ?? "active");
+      setEditNotes(client.notes ?? "");
+      setEditLogoUrl(client.logoUrl ?? "");
+      setEditLogoPreview(client.logoUrl ?? null);
+      setEditKeywords(Array.isArray(client.recommendedKeywords) ? client.recommendedKeywords.join(", ") : "");
+      setEditWhatsapp(client.whatsappNumber ?? "");
+      setEditLoaded(true);
+    }
+  }, [client, editLoaded]);
+
+  const handleLogoFile = useCallback(async (file: File) => {
+    const objectUrl = URL.createObjectURL(file);
+    setEditLogoPreview(objectUrl);
+    await uploadFile(file);
+  }, [uploadFile]);
+
+  const handleLogoDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) handleLogoFile(file);
+  }, [handleLogoFile]);
+
+  const saveDetails = () => {
+    const keywordsArr = editKeywords
+      .split(",")
+      .map((k) => k.trim())
+      .filter(Boolean);
+
+    updateClient.mutate(
+      {
+        id: clientId,
+        data: {
+          name: editName,
+          businessName: editBusinessName,
+          email: editEmail,
+          phone: editPhone,
+          address: editAddress || null,
+          googleReviewLink: editGoogleReviewLink || null,
+          businessCategory: editBusinessCategory,
+          subscriptionPlan: editSubscriptionPlan,
+          status: editStatus,
+          notes: editNotes || null,
+          logoUrl: editLogoUrl || null,
+          recommendedKeywords: keywordsArr,
+          whatsappNumber: editWhatsapp || null,
+        },
+      },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetClientQueryKey(clientId) });
+          toast({ title: "Client details saved" });
+        },
+        onError: () => toast({ title: "Failed to save client details", variant: "destructive" }),
+      }
+    );
+  };
+
+  // ── SMTP state ────────────────────────────────────────────────────────────
   const [smtpHost, setSmtpHost] = useState("");
   const [smtpPort, setSmtpPort] = useState("");
   const [smtpUser, setSmtpUser] = useState("");
@@ -60,7 +158,6 @@ export default function ClientDetail() {
   const [testEmailAddr, setTestEmailAddr] = useState("");
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; previewUrl?: string | null } | null>(null);
 
-  // Load SMTP values from client once
   React.useEffect(() => {
     if (client && !smtpLoaded) {
       setSmtpHost(client.smtpHost ?? "");
@@ -130,6 +227,7 @@ export default function ClientDetail() {
   }
 
   const hasClientSmtp = !!(client.smtpHost && client.smtpUser);
+  const displayLogo = editLogoPreview || client.logoUrl;
 
   return (
     <div className="space-y-6">
@@ -257,8 +355,12 @@ export default function ClientDetail() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="campaigns" className="w-full">
-        <TabsList>
+      <Tabs defaultValue="edit" className="w-full">
+        <TabsList className="flex-wrap">
+          <TabsTrigger value="edit">
+            <Edit2 className="mr-1.5 h-3.5 w-3.5" />
+            Edit Details
+          </TabsTrigger>
           <TabsTrigger value="campaigns">
             QR Campaigns
             {campaigns?.data.length ? (
@@ -293,6 +395,173 @@ export default function ClientDetail() {
           </TabsTrigger>
         </TabsList>
 
+        {/* ── Edit Details ── */}
+        <TabsContent value="edit" className="pt-4 space-y-4">
+          {/* Logo Upload */}
+          <Card className="border-none shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base">Business Logo</CardTitle>
+              <CardDescription>Upload or replace the client's logo. Drag and drop or click to browse.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-start gap-4">
+                <div
+                  className="h-24 w-24 rounded-xl border-2 border-dashed border-[#E5DFDA] flex items-center justify-center overflow-hidden bg-secondary cursor-pointer hover:border-primary/50 transition-colors shrink-0"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={handleLogoDrop}
+                  onClick={() => logoInputRef.current?.click()}
+                >
+                  {displayLogo ? (
+                    <img src={displayLogo} alt="Logo" className="h-full w-full object-cover" />
+                  ) : (
+                    <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
+                  )}
+                </div>
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleLogoFile(file);
+                  }}
+                />
+                <div className="space-y-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? (
+                      <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Uploading...</>
+                    ) : (
+                      <><Upload className="mr-1.5 h-3.5 w-3.5" /> Upload Logo</>
+                    )}
+                  </Button>
+                  {editLogoUrl && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => { setEditLogoUrl(""); setEditLogoPreview(null); }}
+                    >
+                      <X className="mr-1.5 h-3.5 w-3.5" /> Remove
+                    </Button>
+                  )}
+                  <p className="text-xs text-muted-foreground">PNG, JPG, WebP up to 5 MB</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Core Details */}
+          <Card className="border-none shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base">Business Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Business Name</Label>
+                  <Input value={editBusinessName} onChange={(e) => setEditBusinessName(e.target.value)} placeholder="Acme Corp" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Contact Name</Label>
+                  <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="John Smith" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="contact@business.com" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Phone</Label>
+                  <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="+1 555 000 0000" />
+                </div>
+                <div className="space-y-2">
+                  <Label>WhatsApp Number</Label>
+                  <Input value={editWhatsapp} onChange={(e) => setEditWhatsapp(e.target.value)} placeholder="+1 555 000 0000" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Business Category</Label>
+                  <Input value={editBusinessCategory} onChange={(e) => setEditBusinessCategory(e.target.value)} placeholder="Restaurant, Salon, etc." />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Address</Label>
+                  <Input value={editAddress} onChange={(e) => setEditAddress(e.target.value)} placeholder="123 Main St, City, State" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Google Review Link</Label>
+                  <Input
+                    value={editGoogleReviewLink}
+                    onChange={(e) => setEditGoogleReviewLink(e.target.value)}
+                    placeholder="https://g.page/r/..."
+                  />
+                  <p className="text-xs text-muted-foreground">Customers are redirected here after leaving a 4-5 star review.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Subscription Plan</Label>
+                  <Select value={editSubscriptionPlan} onValueChange={setEditSubscriptionPlan}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="basic">Basic — $99/mo</SelectItem>
+                      <SelectItem value="professional">Professional — $299/mo</SelectItem>
+                      <SelectItem value="enterprise">Enterprise — $599/mo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={editStatus} onValueChange={setEditStatus}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="suspended">Suspended</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Recommended Keywords</Label>
+                  <Input
+                    value={editKeywords}
+                    onChange={(e) => setEditKeywords(e.target.value)}
+                    placeholder="great service, friendly staff, highly recommend"
+                  />
+                  <p className="text-xs text-muted-foreground">Comma-separated. Shown to customers during the review flow as keyword suggestions.</p>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Internal Notes</Label>
+                  <Textarea
+                    value={editNotes}
+                    onChange={(e) => setEditNotes(e.target.value)}
+                    placeholder="Internal notes about this client..."
+                    className="min-h-[80px] resize-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button onClick={saveDetails} disabled={updateClient.isPending || isUploading}>
+                  {updateClient.isPending ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+                  ) : (
+                    <><Save className="mr-2 h-4 w-4" /> Save Changes</>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── QR Campaigns ── */}
         <TabsContent value="campaigns" className="pt-4">
           <Card className="border-none shadow-sm">
             <CardContent className="p-0">
@@ -346,6 +615,7 @@ export default function ClientDetail() {
           </Card>
         </TabsContent>
 
+        {/* ── Reviews ── */}
         <TabsContent value="reviews" className="pt-4">
           <Card className="border-none shadow-sm">
             <CardContent className="p-0">
@@ -389,6 +659,7 @@ export default function ClientDetail() {
           </Card>
         </TabsContent>
 
+        {/* ── Feedback ── */}
         <TabsContent value="feedback" className="pt-4">
           <Card className="border-none shadow-sm">
             <CardContent className="p-0">
@@ -444,16 +715,16 @@ export default function ClientDetail() {
           </Card>
         </TabsContent>
 
+        {/* ── Email / SMTP ── */}
         <TabsContent value="smtp" className="pt-4 space-y-4">
-          {/* SMTP Config Card */}
           <Card className="border-none shadow-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg">Client SMTP Configuration</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Set a custom SMTP server for this client. Feedback emails will be sent from this server instead of the platform SMTP.
-                  </p>
+                  <CardTitle className="text-base">Client SMTP Configuration</CardTitle>
+                  <CardDescription className="mt-1">
+                    Set a dedicated SMTP server for this client. Feedback emails use client SMTP first, then platform SMTP, then Ethereal.
+                  </CardDescription>
                 </div>
                 <Button variant="outline" size="sm" onClick={applyGlobalSmtp}>
                   <Copy className="mr-1.5 h-3.5 w-3.5" />
@@ -465,28 +736,15 @@ export default function ClientDetail() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label>SMTP Host</Label>
-                  <Input
-                    placeholder="smtp.gmail.com"
-                    value={smtpHost}
-                    onChange={(e) => setSmtpHost(e.target.value)}
-                  />
+                  <Input placeholder="smtp.gmail.com" value={smtpHost} onChange={(e) => setSmtpHost(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label>SMTP Port</Label>
-                  <Input
-                    type="number"
-                    placeholder="587"
-                    value={smtpPort}
-                    onChange={(e) => setSmtpPort(e.target.value)}
-                  />
+                  <Input type="number" placeholder="587" value={smtpPort} onChange={(e) => setSmtpPort(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label>SMTP Username / Email</Label>
-                  <Input
-                    placeholder="alerts@clientdomain.com"
-                    value={smtpUser}
-                    onChange={(e) => setSmtpUser(e.target.value)}
-                  />
+                  <Input placeholder="alerts@clientdomain.com" value={smtpUser} onChange={(e) => setSmtpUser(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label>SMTP Password</Label>
@@ -516,13 +774,10 @@ export default function ClientDetail() {
             </CardContent>
           </Card>
 
-          {/* Test Email Card */}
           <Card className="border-none shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg">Send Test Email</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Verify the SMTP configuration by sending a test email. Save settings first before testing.
-              </p>
+              <CardTitle className="text-base">Send Test Email</CardTitle>
+              <CardDescription>Verify the SMTP configuration is working. Save settings first before testing.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-3">
@@ -533,42 +788,23 @@ export default function ClientDetail() {
                   onChange={(e) => setTestEmailAddr(e.target.value)}
                   className="max-w-sm"
                 />
-                <Button
-                  variant="outline"
-                  onClick={handleTestEmail}
-                  disabled={sendTestEmail.isPending}
-                >
+                <Button variant="outline" onClick={handleTestEmail} disabled={sendTestEmail.isPending}>
                   <Send className="mr-1.5 h-4 w-4" />
-                  {sendTestEmail.isPending ? "Sending..." : "Send Test Email"}
+                  {sendTestEmail.isPending ? "Sending..." : "Send Test"}
                 </Button>
               </div>
-
               {testResult && (
                 <Alert className={testResult.success ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
-                  {testResult.success
-                    ? <CheckCircle className="h-4 w-4 text-green-600" />
-                    : <Mail className="h-4 w-4 text-red-600" />
-                  }
+                  {testResult.success ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Mail className="h-4 w-4 text-red-600" />}
                   <AlertDescription className={testResult.success ? "text-green-800" : "text-red-800"}>
-                    <span>{testResult.message}</span>
+                    {testResult.message}
                     {testResult.previewUrl && (
-                      <a
-                        href={testResult.previewUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="ml-2 inline-flex items-center gap-1 underline font-medium"
-                      >
-                        View email <ExternalLink className="h-3 w-3" />
+                      <a href={testResult.previewUrl} target="_blank" rel="noopener noreferrer" className="ml-2 underline font-medium">
+                        View email <ExternalLink className="inline h-3 w-3" />
                       </a>
                     )}
                   </AlertDescription>
                 </Alert>
-              )}
-
-              {!hasClientSmtp && !smtpHost && (
-                <p className="text-sm text-muted-foreground">
-                  No client SMTP configured — test will use the platform SMTP or Ethereal fallback.
-                </p>
               )}
             </CardContent>
           </Card>

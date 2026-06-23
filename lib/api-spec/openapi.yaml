@@ -2352,6 +2352,8 @@ components:
           type: string
         isActive:
           type: boolean
+        googleReviewLink:
+          type: ["string", "null"]
       required: [campaignId, clientId, businessName, recommendedKeywords, businessCategory, isActive]
 
     SubmitReviewBody:

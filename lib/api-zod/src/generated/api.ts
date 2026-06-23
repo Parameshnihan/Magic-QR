@@ -1229,6 +1229,7 @@ export const GetPublicReviewPageResponse = zod.object({
   recommendedKeywords: zod.array(zod.string()),
   businessCategory: zod.string(),
   isActive: zod.boolean(),
+  googleReviewLink: zod.string().nullish(),
 });
 
 /**

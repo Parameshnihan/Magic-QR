@@ -29,20 +29,30 @@ router.post("/public/review/ai-keywords", async (req, res): Promise<void> => {
   };
 
   try {
-    const prompt = `You are a Google review assistant. A customer gave ${rating} stars to "${businessName}"${businessCategory ? ` (a ${businessCategory})` : ""}.
+    const ratingLabel = rating === 5 ? "five-star" : "four-star";
+    const prompt = `You are an expert at writing authentic, SEO-friendly Google reviews that sound like real customers wrote them.
 
-Respond with a JSON object containing:
-1. "keywords": an array of 8 short keyword phrases (2-5 words each) that are commonly mentioned in Google reviews for this type of business. These should be specific, authentic phrases customers actually write.
-2. "reviewTemplate": a natural, positive ${rating}-star review (2-3 sentences) that uses some of the keywords. Write as a real customer. Vary the sentence opening - do not start with "I".
+A customer just gave a ${ratingLabel} rating to "${businessName}"${businessCategory ? ` (${businessCategory})` : ""}. Generate review content.
 
-Respond ONLY with valid JSON. No markdown. No explanation. Example format:
-{"keywords":["phrase one","phrase two"],"reviewTemplate":"The experience was great."}`;
+Return a JSON object with exactly these two keys:
+1. "keywords": array of 10 short, specific keyword phrases (2–5 words each) that real customers of a ${businessCategory || "business"} like "${businessName}" would mention. Make them natural, specific, and varied — not generic. Include phrases about service quality, staff, atmosphere, value, and outcomes.
+2. "reviewTemplate": a single authentic ${ratingLabel} review, 3–4 sentences long, written as a real satisfied customer. Requirements:
+   - Naturally mention "${businessName}" once by name (good for SEO)
+   - Start with a strong opener that is NOT "I visited" or "I went" — try "Just had an amazing...", "Absolutely blown away...", "Cannot recommend ... enough", "What a find!", "Had such a great experience at...", etc.
+   - Weave in 3–4 of the keywords naturally (do not list them)
+   - Use natural first-person language, varied sentence lengths, and a conversational tone
+   - End with a recommendation or intent to return
+   - Sound like a real person, not a marketing bot
+   - 80–120 words
+
+Respond ONLY with valid JSON, no markdown fences. Example:
+{"keywords":["friendly staff","quick turnaround","fair pricing","attention to detail"],"reviewTemplate":"Cannot say enough good things about ${businessName}..."}`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-5-mini",
-      max_completion_tokens: 600,
+      model: "gpt-4o-mini",
+      max_completion_tokens: 700,
       messages: [
-        { role: "system", content: "You are a helpful assistant that responds only with valid JSON objects." },
+        { role: "system", content: "You respond only with valid JSON. No markdown, no explanation, no code fences." },
         { role: "user", content: prompt },
       ],
     });
@@ -203,6 +213,7 @@ router.get("/public/review/:qrCode", async (req, res): Promise<void> => {
     recommendedKeywords: client.recommendedKeywords ?? [],
     businessCategory: client.businessCategory,
     isActive: true,
+    googleReviewLink: client.googleReviewLink ?? null,
   });
 });
 

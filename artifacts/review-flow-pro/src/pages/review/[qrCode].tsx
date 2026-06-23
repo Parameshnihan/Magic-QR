@@ -93,10 +93,11 @@ export default function PublicReviewFlow() {
   const handleCopyAndGo = async () => {
     const text = reviewText.trim();
     if (!text) return;
+
+    // Copy to clipboard
     try {
       await navigator.clipboard.writeText(text);
     } catch {
-      // Fallback for non-secure contexts
       const el = document.createElement("textarea");
       el.value = text;
       document.body.appendChild(el);
@@ -107,23 +108,18 @@ export default function PublicReviewFlow() {
     setCopied(true);
     setStep("copied");
 
-    submitReview.mutate(
-      { qrCode: qrCode as string, data: { rating, reviewText: text, keywords: selectedKeywords } },
-      {
-        onSuccess: (res) => {
-          setTimeout(() => {
-            if (res.googleReviewUrl) {
-              window.location.href = res.googleReviewUrl;
-            } else {
-              setStep("thank_you");
-            }
-          }, 2500);
-        },
-        onError: () => {
-          setTimeout(() => setStep("thank_you"), 2500);
-        },
-      }
-    );
+    // Fire the submit in the background (we already have the googleReviewUrl from pageData)
+    submitReview.mutate({ qrCode: qrCode as string, data: { rating, reviewText: text, keywords: selectedKeywords } });
+
+    // Redirect immediately — must happen synchronously in a user-gesture handler
+    const googleUrl = pageData?.googleReviewLink;
+    if (googleUrl) {
+      setTimeout(() => {
+        window.open(googleUrl, "_blank", "noopener,noreferrer");
+      }, 1200); // brief pause so user sees the "copied" confirmation
+    } else {
+      setTimeout(() => setStep("thank_you"), 2500);
+    }
   };
 
   const handleNegativeSubmit = () => {

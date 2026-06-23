@@ -723,6 +723,8 @@ export interface PublicReviewPageData {
   recommendedKeywords: string[];
   businessCategory: string;
   isActive: boolean;
+  /** @nullable */
+  googleReviewLink?: string | null;
 }
 
 export interface SubmitReviewBody {
