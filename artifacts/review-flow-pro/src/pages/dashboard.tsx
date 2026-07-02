@@ -8,11 +8,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { motion } from "framer-motion";
 
 export default function Dashboard() {
-  const { data: stats, isLoading } = useGetDashboardStats({
-    query: {
-      queryKey: getGetDashboardStatsQueryKey()
-    }
-  });
+  const { data: stats, isLoading } = useGetDashboardStats();
 
   if (isLoading || !stats) {
     return (

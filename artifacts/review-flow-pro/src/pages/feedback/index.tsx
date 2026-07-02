@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useListFeedback, useUpdateFeedback, getListFeedbackQueryKey } from "@workspace/api-client-react";
+import { useListFeedback, useUpdateFeedback, getListFeedbackQueryKey, UpdateFeedbackBodyStatus } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -61,12 +61,12 @@ export default function Feedback() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [selected, setSelected] = useState<FeedbackItem | null>(null);
-  const [newStatus, setNewStatus] = useState<string>("");
+  const [newStatus, setNewStatus] = useState<UpdateFeedbackBodyStatus>(UpdateFeedbackBodyStatus.new);
   const [search, setSearch] = useState("");
 
   const openReview = (item: FeedbackItem) => {
     setSelected(item);
-    setNewStatus(item.status);
+    setNewStatus(item.status as UpdateFeedbackBodyStatus);
   };
 
   const handleUpdateStatus = () => {
@@ -251,16 +251,15 @@ export default function Feedback() {
 
               <div className="space-y-2">
                 <Label>Update Status</Label>
-                <Select value={newStatus} onValueChange={setNewStatus}>
+                <Select value={newStatus} onValueChange={(v) => setNewStatus(v as UpdateFeedbackBodyStatus)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="new">New</SelectItem>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="resolved">Resolved</SelectItem>
-                    <SelectItem value="closed">Closed</SelectItem>
+                    <SelectItem value={UpdateFeedbackBodyStatus.new}>New</SelectItem>
+                    <SelectItem value={UpdateFeedbackBodyStatus.in_progress}>In Progress</SelectItem>
+                    <SelectItem value={UpdateFeedbackBodyStatus.resolved}>Resolved</SelectItem>
+                    <SelectItem value={UpdateFeedbackBodyStatus.closed}>Closed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
