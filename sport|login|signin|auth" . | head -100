@@ -1,0 +1,7 @@
+ id |     name      |          email          |                          password_hash                           |    role     | status | avatar |       phone       |          created_at           |          updated_at           
+----+---------------+-------------------------+------------------------------------------------------------------+-------------+--------+--------+-------------------+-------------------------------+-------------------------------
+  1 | Alex Thornton | admin@reviewflowpro.com | e48913a810b02b53042821ebac5a841c3fa6aa4eaa2816398e12d2c2ef826b41 | super_admin | active |        | +1 (555) 001-0001 | 2026-05-07 05:51:17.038545+00 | 2026-05-07 05:51:17.038545+00
+  2 | Sarah Chen    | sarah@reviewflowpro.com | 7010a3f2a6d4a3868ed956c00a17998646712c2f6cfe0156b47c4cf0709efedd | manager     | active |        | +1 (555) 001-0002 | 2026-05-07 05:51:17.07132+00  | 2026-05-07 05:51:17.07132+00
+  3 | James Okonkwo | james@reviewflowpro.com | 7010a3f2a6d4a3868ed956c00a17998646712c2f6cfe0156b47c4cf0709efedd | manager     | active |        | +1 (555) 001-0003 | 2026-05-07 05:51:17.076504+00 | 2026-05-07 05:51:17.076504+00
+(3 rows)
+
