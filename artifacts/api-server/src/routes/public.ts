@@ -5,8 +5,8 @@ import {
   SubmitPublicReviewBody,
   RecordQrScanBody,
 } from "@workspace/api-zod";
-import { openai } from "@workspace/integrations-openai-ai-server";
 import nodemailer from "nodemailer";
+import { openai } from "@workspace/integrations-openai-ai-server";
 
 const router: IRouter = Router();
 
@@ -27,6 +27,11 @@ router.post("/public/review/ai-keywords", async (req, res): Promise<void> => {
     keywords: ["exceptional service", "highly recommend", "professional staff", "great experience", "exceeded expectations", "friendly team", "outstanding quality", "will return"],
     reviewTemplate: `${businessName} delivered an exceptional experience. The staff was professional and the quality was outstanding. Highly recommend to anyone looking for excellent service.`,
   };
+
+  if (!openai) {
+    res.json(fallback);
+    return;
+  }
 
   try {
     const ratingLabel = rating === 5 ? "five-star" : "four-star";
