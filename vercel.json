@@ -4,7 +4,7 @@
   "buildCommand": "pnpm build",
   "installCommand": "pnpm install --frozen-lockfile",
   "framework": null,
-  "outputDirectory": "artifacts/review-flow-pro/dist/public",
+  "outputDirectory": "artifacts/review-flow-pro/dist",
   "rewrites": [
     {
       "source": "/((?!api/).*)",
