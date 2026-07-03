@@ -11,15 +11,15 @@ version = "1.0.0"
 
 [[services]]
 name = "web"
-paths = [ "/" ]
+paths = ["/"]
 localPort = 22083
 
 [services.development]
 run = "pnpm --filter @workspace/review-flow-pro run dev"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/review-flow-pro", "run", "build" ]
-publicDir = "artifacts/review-flow-pro/dist/public"
+build = ["pnpm", "--filter", "@workspace/review-flow-pro", "run", "build"]
+publicDir = "dist"
 serve = "static"
 
 [[services.production.rewrites]]
