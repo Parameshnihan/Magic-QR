@@ -1,8 +1,13 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src",
+    // Scripts run via `tsx` at dev time (never compiled by tsc).
+    // tsc is only used for type-checking (pnpm typecheck --noEmit).
+    //
+    // noEmit: true — prevents any attempt to emit JS files, which would
+    //   fail on a clean build because outDir/rootDir are meaningless when
+    //   tsc is not the build tool.
+    "noEmit": true,
     "types": ["node"]
   },
   "include": ["src"]

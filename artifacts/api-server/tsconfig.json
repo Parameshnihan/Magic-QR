@@ -1,20 +1,24 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src",
+    // tsc is used ONLY for type-checking (pnpm typecheck).
+    // The actual build is done by esbuild (node build.mjs).
+    //
+    // noEmit: true — prevents any attempt to emit JS/d.ts files.
+    //   Without this, a bare `tsc -p tsconfig.json` (no --noEmit flag)
+    //   tries to emit JS and then hits noEmitOnError when the referenced
+    //   composite libs haven't been pre-built — producing "Emit skipped"
+    //   on Vercel's clean-clone build environment.
+    //
+    // No outDir / rootDir — only meaningful during emit.
+    //
+    // No references — removing them lets TypeScript resolve @workspace/*
+    //   imports directly from source via pnpm workspace package.json exports
+    //   (which already point to ./src/index.ts). This makes type-checking
+    //   independent of whether lib/*/dist/*.d.ts files have been pre-built,
+    //   which is the correct model when the build tool is esbuild, not tsc.
+    "noEmit": true,
     "types": ["node"]
   },
-  "include": ["src"],
-  "references": [
-    {
-      "path": "../../lib/db"
-    },
-    {
-      "path": "../../lib/api-zod"
-    },
-    {
-      "path": "../../lib/integrations-openai-ai-server"
-    }
-  ]
+  "include": ["src"]
 }

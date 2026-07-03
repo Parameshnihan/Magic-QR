@@ -1,0 +1,1 @@
+- [tsconfig-noemit-pattern](tsconfig-noemit-pattern.md) — esbuild/tsx projects must have noEmit:true in tsconfig; outDir/references cause "Emit skipped" on clean CI clones
