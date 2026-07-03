@@ -23,9 +23,9 @@ async function seed() {
 
   // Users
   const [admin] = await db.insert(usersTable).values({
-    name: "Alex Thornton",
-    email: "admin@reviewflowpro.com",
-    passwordHash: hash("admin123"),
+    name: "Paramesh Paidakula",
+    email: "paramesh.paidakula@gmail.com",
+    passwordHash: hash("Advento@2026"),
     role: "super_admin",
     status: "active",
     phone: "+1 (555) 001-0001",
@@ -404,8 +404,9 @@ async function seed() {
 
   console.log("Settings seeded");
   console.log("\nSeed complete.");
-  console.log("Login: admin@reviewflowpro.com / admin123");
-  console.log("       sarah@reviewflowpro.com  / manager123");
+  console.log("Login: paramesh.paidakula@gmail.com / Advento@2026  (super_admin)");
+  console.log("       sarah@reviewflowpro.com       / manager123       (manager)");
+  console.log("       james@reviewflowpro.com       / manager123       (manager)");
 
   process.exit(0);
 }
